@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { AuthProvider } from "@/context/AuthContext";
 import { DM_Sans, Syne } from "next/font/google";
-import "./globals.css";
+import "../(main)/globals.css";
 import Link from "next/link";
 
 const dmSans = DM_Sans({
