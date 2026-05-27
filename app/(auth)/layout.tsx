@@ -1,21 +1,23 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "../(main)/globals.css";
+import { AuthProvider } from "@/context/AuthContext";
+import { DM_Sans, Syne } from "next/font/google";
+import "./globals.css";
 import Link from "next/link";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const dmSans = DM_Sans({
   subsets: ["latin"],
+  variable: "--font-dm-sans",
+  weight: ["400", "500", "600"],
 });
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const syne = Syne({
   subsets: ["latin"],
+  variable: "--font-syne",
+  weight: ["600", "700", "800"],
 });
 
 export const metadata: Metadata = {
-  title: "Prompt App",
-  description: "A website for creating and sharing Prompts",
+  title: "ESRMS — Event Scheduling & Resource Management",
+  description: "Institutional event logistics platform",
 };
 
 export default function RootLayout({
@@ -24,11 +26,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">
+    <html lang="en" className={`${dmSans.variable} ${syne.variable}`}>
+      <body className="font-sans antialiased bg-slate-50 text-slate-900">
         <Link href="/" className="flex gap-2 flex-center">
           <p>ESRMS</p>
         </Link>
