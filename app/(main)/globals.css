@@ -1,26 +1,234 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@theme {
+  --font-family-sans: var(--font-dm-sans), sans-serif;
+  --font-family-display: var(--font-syne), sans-serif;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --animate-fade-in: fadeIn 0.4s ease forwards;
+  --animate-slide-up: slideUp 0.4s ease forwards;
+  --animate-slide-in: slideIn 0.3s ease forwards;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes slideUp {
+    from {
+      transform: translateY(12px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  @keyframes slideIn {
+    from {
+      transform: translateX(-8px);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ── Base ─────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ── Design tokens ────────────────────────────────────────── */
+:root {
+  --navy-950: #040a14;
+  --navy-900: #080f22;
+  --navy-800: #0d1a38;
+  --navy-700: #162249;
+  --amber: #f59e0b;
+}
+
+/* ── Reusable component classes ───────────────────────────── */
+.sidebar {
+  background: var(--navy-950);
+  background-image:
+    radial-gradient(
+      ellipse at top left,
+      rgba(245, 158, 11, 0.07) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse at bottom right,
+      rgba(14, 30, 80, 0.6) 0%,
+      transparent 70%
+    );
+}
+
+.card {
+  background: white;
+  border-radius: 1rem;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.stat-card {
+  background: white;
+  border-radius: 1rem;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  transition: box-shadow 0.2s;
+}
+
+.stat-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.page-title {
+  font-family: var(--font-family-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+.page-subtitle {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin-top: 0.25rem;
+}
+.page-header {
+  margin-bottom: 2rem;
+}
+
+/* ── Data table ───────────────────────────────────────────── */
+.data-table {
+  width: 100%;
+  font-size: 0.875rem;
+}
+
+.data-table thead th {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: #f8fafc;
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.data-table tbody td {
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  color: #475569;
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+.data-table tbody tr:hover td {
+  background: rgba(248, 250, 252, 0.6);
+}
+
+/* ── Wizard step dots ─────────────────────────────────────── */
+.step-dot {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: 2px solid;
+  transition: all 0.3s;
+  background: white;
+}
+.step-dot.active {
+  background: #f59e0b;
+  border-color: #f59e0b;
+  color: white;
+  transform: scale(1.1);
+}
+.step-dot.done {
+  background: #0d1a38;
+  border-color: #0d1a38;
+  color: white;
+}
+.step-dot.upcoming {
+  border-color: #cbd5e1;
+  color: #94a3b8;
+}
+
+/* ── Form inputs ──────────────────────────────────────────── */
+.field-input {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  border-radius: 0.75rem;
+  border: 1.5px solid #cbd5e1;
+  font-size: 0.875rem;
+  color: #0f172a;
+  background: white;
+  outline: none;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+.field-input::placeholder {
+  color: #94a3b8;
+}
+.field-input:focus {
+  border-color: #0d1a38;
+  box-shadow: 0 0 0 3px rgba(13, 26, 56, 0.08);
+}
+
+.auth-input {
+  width: 100%;
+  padding: 0.625rem 0.875rem 0.625rem 2.5rem;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  color: #1e293b;
+  background: white;
+  outline: none;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+.auth-input::placeholder {
+  color: #94a3b8;
+}
+.auth-input:focus {
+  border-color: #0d1a38;
+  box-shadow: 0 0 0 3px rgba(13, 26, 56, 0.08);
 }
