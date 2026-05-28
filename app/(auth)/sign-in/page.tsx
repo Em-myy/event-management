@@ -11,7 +11,7 @@ type formType = {
   password: string;
 };
 
-const LoginPage = () => {
+const SignInPage = () => {
   const supabase = createClient();
   const router = useRouter();
 
@@ -34,8 +34,9 @@ const LoginPage = () => {
       });
       if (error) {
         console.log(error.message);
+        return;
       }
-      router.push("/");
+      router.push("/dashboard");
 
       router.refresh();
     } catch (error) {
@@ -86,4 +87,4 @@ const LoginPage = () => {
   );
 };
 
-export default LoginPage;
+export default SignInPage;
