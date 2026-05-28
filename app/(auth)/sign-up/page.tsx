@@ -12,7 +12,7 @@ type formType = {
   password: string;
 };
 
-const RegisterPage = () => {
+const SignUpPage = () => {
   const supabase = createClient();
   const router = useRouter();
 
@@ -35,7 +35,7 @@ const RegisterPage = () => {
       email: formData.email,
       password: formData.password,
       options: {
-        emailRedirectTo: `${window.location.origin}/profile`,
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
         data: {
           username: formData.username,
         },
@@ -120,4 +120,4 @@ const RegisterPage = () => {
   );
 };
 
-export default RegisterPage;
+export default SignUpPage;
