@@ -35,7 +35,7 @@ export const createClient = async (request: NextRequest) => {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const protectedRoutes = ["/home"];
+  const protectedRoutes = ["/dashboard"];
 
   const isProtectedRoute = protectedRoutes.some((route) =>
     request.nextUrl.pathname.startsWith(route),
