@@ -1,21 +1,91 @@
-import Link from "next/link";
+"use client";
+
+import GoogleButton from "@/components/GoogleButton";
+import SignInForm from "@/components/SignInForm";
+import SignInText from "@/components/SignInText";
+import SignUpForm from "@/components/SignUpForm";
+import SignUpText from "@/components/SignUpText";
+import { createClient } from "@/utils/supabase/client";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+
+type formData = {
+  username: string;
+  email: string;
+  password: string;
+};
 
 const MainPage = () => {
+  const supabase = createClient();
+  const router = useRouter();
+
+  const [mode, setMode] = useState<string>("Sign In");
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>("");
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [form, setForm] = useState<formData>({
+    username: "",
+    email: "",
+    password: "",
+  });
+
+  const handleFormChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setForm({ ...form, [event.target.name]: event.target.value });
+  };
+
+  const handleSubmit = async (event: React.ChangeEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      if (mode === "Sign In") {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: form.email,
+          password: form.password,
+        });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.auth.signUp({
+          email: form.email,
+          password: form.password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+            data: {
+              username: form.username,
+            },
+          },
+        });
+        if (error) throw error;
+      }
+
+      router.push("/dashboard");
+      router.refresh();
+    } catch (error: any) {
+      setError(error.message ?? "Authentication Failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div>
-      <h1>ESRMS</h1>
-      <h2>Manage Events Without the Chaos</h2>
-      <h3>
-        If you do not have an account{" "}
-        <span>
-          <Link href="sign-up">Sign Up</Link>
-        </span>
-        , or if you have an account{" "}
-        <span>
-          <Link href="sign-in">Sign In</Link>
-        </span>
-      </h3>
-    </div>
+    <main className="grid grid-cols-2">
+      <section className="bg-blue-800">
+        <h1>ESRMS</h1>
+        <div>{authSelect === "Sign In" ? <SignInText /> : <SignUpText />}</div>
+      </section>
+      <section className="bg-gray-300">
+        <div>
+          <button onClick={handleSignInAuth}>Sign In</button>
+          <button onClick={handleSignUpAuth}>Sign Up</button>
+        </div>
+        <div>{authSelect === "Sign In" ? <SignInForm /> : <SignUpForm />}</div>
+        <h2>Or</h2>
+        <div>
+          <GoogleButton />
+        </div>
+      </section>
+    </main>
   );
 };
 
