@@ -1,88 +1,36 @@
 "use client";
 
 import GoogleButton from "@/components/GoogleButton";
-import { createClient } from "@/utils/supabase/client";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import SignInForm from "@/components/SignInForm";
+import SignUpForm from "@/components/SignUpForm";
 import { useState } from "react";
 
-type formType = {
-  email: string;
-  password: string;
-};
-
 const SignInPage = () => {
-  const supabase = createClient();
-  const router = useRouter();
+  const [authSelect, setAuthSelect] = useState<string>("Sign In");
 
-  const [formData, setFormData] = useState({ email: "", password: "" });
-
-  const handleFormChange = async (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    setFormData({ ...formData, [event.target.name]: event.target.value });
+  const handleSignInAuth = () => {
+    setAuthSelect("Sign In");
   };
 
-  const handleFormSubmit = async (
-    event: React.ChangeEvent<HTMLFormElement>,
-  ) => {
-    event.preventDefault();
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password,
-      });
-      if (error) {
-        console.log(error.message);
-        return;
-      }
-      router.push("/dashboard");
-
-      router.refresh();
-    } catch (error) {
-      console.log(error);
-    }
+  const handleSignUpAuth = () => {
+    setAuthSelect("Sign Up");
   };
   return (
-    <main>
-      <h1>Login Page</h1>
-      <section>
+    <main className="grid grid-cols-2">
+      <section className="bg-blue-800">
+        <h2>Manage Events without choas</h2>
+      </section>
+      <section className="bg-gray-300">
         <div>
-          <form onSubmit={handleFormSubmit}>
-            <div>
-              <label>E-Mail: </label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                required
-                onChange={handleFormChange}
-                className="bg-green-300"
-              />
-            </div>
-            <div>
-              <label>Password: </label>
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                required
-                onChange={handleFormChange}
-                className="bg-blue-400"
-              />
-            </div>
-            <button type="submit">Login</button>
-          </form>
+          <button onClick={handleSignInAuth}>Sign In</button>
+          <button onClick={handleSignUpAuth}>Sign Up</button>
         </div>
+        <div>{authSelect === "Sign In" ? <SignInForm /> : <SignUpForm />}</div>
         <h2>Or</h2>
         <div>
           <GoogleButton />
         </div>
       </section>
-      <div>
-        <p>If you don't have an account then: </p>
-        <Link href="/sign-up">Sign Up</Link>
-      </div>
     </main>
   );
 };
