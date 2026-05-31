@@ -68,25 +68,7 @@ const MainPage = () => {
     }
   };
 
-  return (
-    <main className="grid grid-cols-2">
-      <section className="bg-blue-800">
-        <h1>ESRMS</h1>
-        <div>{authSelect === "Sign In" ? <SignInText /> : <SignUpText />}</div>
-      </section>
-      <section className="bg-gray-300">
-        <div>
-          <button onClick={handleSignInAuth}>Sign In</button>
-          <button onClick={handleSignUpAuth}>Sign Up</button>
-        </div>
-        <div>{authSelect === "Sign In" ? <SignInForm /> : <SignUpForm />}</div>
-        <h2>Or</h2>
-        <div>
-          <GoogleButton />
-        </div>
-      </section>
-    </main>
-  );
+  return <main className="grid grid-cols-2"></main>;
 };
 
 export default MainPage;
