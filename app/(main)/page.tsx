@@ -2,10 +2,6 @@
 
 import Field from "@/components/Field";
 import GoogleButton from "@/components/GoogleButton";
-import SignInForm from "@/components/SignInForm";
-import SignInText from "@/components/SignInText";
-import SignUpForm from "@/components/SignUpForm";
-import SignUpText from "@/components/SignUpText";
 import { createClient } from "@/utils/supabase/client";
 import {
   AlertCircle,
@@ -113,9 +109,9 @@ const MainPage = () => {
           </span>
         </div>
 
-        <div className="relative z-10 max-w-sm">
+        <div className="relative z-10 max-w-[70%]">
           <h1 className="font-family-display text-5xl font-bold text-white leading-tight mb-6">
-            {mode === "Sign In" ? "Manage events" : "Your events,"}
+            {mode === "Sign In" ? "Manage events " : "Your events, "}
             <span className="text-amber-400">
               {mode === "Sign In" ? "without the chaos" : "perfectly organized"}
             </span>
@@ -125,7 +121,7 @@ const MainPage = () => {
               ? "Book Venues, Allocate Resources and get approvals - all from one central platform"
               : "Create your account to start submitting booking requests and tracking approvals in real time."}
           </p>
-          <div className="mt-10 grid grid-cols-3 gap-4 w-full">
+          <div className="mt-10 grid grid-cols-3 gap-4">
             {mode === "Sign In" ? (
               [
                 { text: "100%", label: "Conflict-free bookings" },
@@ -134,7 +130,7 @@ const MainPage = () => {
               ].map((s) => (
                 <div
                   key={s.label}
-                  className="bg-white/5 rounded-xl p-4 border border-white/10"
+                  className="bg-white/5 rounded-xl p-6 border border-white/10"
                 >
                   <div className="font-family-display text-2xl font-bold text-amber-400">
                     {s.text}
@@ -143,13 +139,13 @@ const MainPage = () => {
                 </div>
               ))
             ) : (
-              <ul className="flex flex-col gap-5 p-6 bg-[#0B0F19]">
+              <ul className="flex flex-col gap-5 w-xl">
                 {[
                   "No double booking, ever",
                   "Real-time availability",
                   "Instant approval notifications",
                 ].map((features, index) => (
-                  <li key={index} className="flex items-center">
+                  <li key={index} className="flex items-center gap-4">
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#D9852B]/20">
                       <Check
                         className="h-5 w-5 text-[#D9852B]"
