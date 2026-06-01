@@ -1,12 +1,13 @@
 "use client";
 
+import Field from "@/components/Field";
 import GoogleButton from "@/components/GoogleButton";
 import SignInForm from "@/components/SignInForm";
 import SignInText from "@/components/SignInText";
 import SignUpForm from "@/components/SignUpForm";
 import SignUpText from "@/components/SignUpText";
 import { createClient } from "@/utils/supabase/client";
-import { Calendar } from "lucide-react";
+import { AlertCircle, Calendar, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -122,6 +123,64 @@ const MainPage = () => {
               </div>
             ))}
           </div>
+        </div>
+
+        <div className="relative z-10 text-xs text-slate-600">
+          &copy; {new Date().getFullYear()} ESRMS · Institutional Resource
+          Platform
+        </div>
+      </div>
+
+      <div className="flex flex-1 items-center justify-center p-8 text-slate-50">
+        <div className="w-full max-w-md animate-fade-in">
+          <div className="mb-8">
+            <h2 className="font-family-display text-3xl font-bold text-slate-900">
+              {mode === "Sign In" ? "Welcome Back" : "Create Account"}
+            </h2>
+            <p className="text-slate-500 mt-2 text-sm">
+              {mode === "Sign In"
+                ? "Sign in to access your dashboard."
+                : "Sign up to start booking venues."}
+            </p>
+          </div>
+
+          <div className="flex bg-slate-200 p-1 rounded-xl mb-7">
+            {["Sign In", "Sign Up"].map((m) => (
+              <button
+                key={m}
+                onClick={() => {
+                  setMode(m);
+                  setError("");
+                }}
+                className={`flex-1 py-2 text-sm font-semibold rounded-lg cursor-pointer transition-all ${mode === m ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"}`}
+              >
+                {m === "Sign In" ? "Sign in" : "Sign up"}
+              </button>
+            ))}
+          </div>
+
+          {error && (
+            <div className="mb-5 flex items-start gap-3 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm animate-fade-in">
+              <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {mode === "Sign Up" && (
+              <>
+                <Field icon={<User className="w-4 h-4" />} label="Full Name">
+                  <input
+                    required
+                    value={form.username}
+                    onChange={handleFormChange}
+                    placeholder="Dr. Jane Smith"
+                    className="auth-input"
+                  />
+                </Field>
+              </>
+            )}
+          </form>
         </div>
       </div>
     </main>
