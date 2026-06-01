@@ -2,7 +2,7 @@ type propsType = {
   label: string;
   children: React.ReactNode;
   icon: React.ReactNode;
-  action: React.ReactNode;
+  action?: React.ReactNode;
 };
 
 const Field = ({ icon, label, action, children }: propsType) => {
