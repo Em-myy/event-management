@@ -95,6 +95,34 @@ const MainPage = () => {
             ESRMS
           </span>
         </div>
+
+        <div className="relative z-10 max-w-sm">
+          <h1 className="font-family-display text-5xl font-bold text-white leading-tight mb-6">
+            Manage events{" "}
+            <span className="text-amber-400">without the chaos</span>
+          </h1>
+          <p className="text-slate-400 text-base leading-relaxed">
+            Book Venues, Allocate Resources and get approvals - all from one
+            central platform
+          </p>
+          <div className="mt-10 grid grid-cols-3 gap-4">
+            {[
+              { text: "100%", label: "Conflict-free bookings" },
+              { text: "3", label: "Permission Levels" },
+              { text: "∞", label: "Scalable events" },
+            ].map((s) => (
+              <div
+                key={s.label}
+                className="bg-white/5 rounded-xl p-4 border border-white/10"
+              >
+                <div className="font-family-display text-2xl font-bold text-amber-400">
+                  {s.text}
+                </div>
+                <div className="text-xs text-slate-400 mt-1">{s.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </main>
   );
