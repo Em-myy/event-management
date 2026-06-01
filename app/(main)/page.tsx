@@ -7,7 +7,17 @@ import SignInText from "@/components/SignInText";
 import SignUpForm from "@/components/SignUpForm";
 import SignUpText from "@/components/SignUpText";
 import { createClient } from "@/utils/supabase/client";
-import { AlertCircle, Calendar, User } from "lucide-react";
+import {
+  AlertCircle,
+  Calendar,
+  Check,
+  Eye,
+  EyeOff,
+  Loader2,
+  Lock,
+  Mail,
+  User,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -46,7 +56,10 @@ const MainPage = () => {
           email: form.email,
           password: form.password,
         });
-        if (error) throw error;
+        if (error) {
+          setError(error.message);
+          return;
+        }
       } else {
         const { error } = await supabase.auth.signUp({
           email: form.email,
@@ -58,7 +71,10 @@ const MainPage = () => {
             },
           },
         });
-        if (error) throw error;
+        if (error) {
+          setError(error.message);
+          return;
+        }
       }
 
       router.push("/dashboard");
@@ -72,7 +88,7 @@ const MainPage = () => {
 
   return (
     <main className="min-h-screen flex">
-      <div className="hidden lg:flex lg-w-[55%] sidebar flex-col justify-betweenp-12 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-[45%] sidebar flex-col justify-between p-16 relative overflow-hidden">
         <div
           className="absolute inset-0 opacity-0.04"
           style={{
@@ -99,29 +115,54 @@ const MainPage = () => {
 
         <div className="relative z-10 max-w-sm">
           <h1 className="font-family-display text-5xl font-bold text-white leading-tight mb-6">
-            Manage events{" "}
-            <span className="text-amber-400">without the chaos</span>
+            {mode === "Sign In" ? "Manage events" : "Your events,"}
+            <span className="text-amber-400">
+              {mode === "Sign In" ? "without the chaos" : "perfectly organized"}
+            </span>
           </h1>
           <p className="text-slate-400 text-base leading-relaxed">
-            Book Venues, Allocate Resources and get approvals - all from one
-            central platform
+            {mode === "Sign In"
+              ? "Book Venues, Allocate Resources and get approvals - all from one central platform"
+              : "Create your account to start submitting booking requests and tracking approvals in real time."}
           </p>
-          <div className="mt-10 grid grid-cols-3 gap-4">
-            {[
-              { text: "100%", label: "Conflict-free bookings" },
-              { text: "3", label: "Permission Levels" },
-              { text: "∞", label: "Scalable events" },
-            ].map((s) => (
-              <div
-                key={s.label}
-                className="bg-white/5 rounded-xl p-4 border border-white/10"
-              >
-                <div className="font-family-display text-2xl font-bold text-amber-400">
-                  {s.text}
+          <div className="mt-10 grid grid-cols-3 gap-4 w-full">
+            {mode === "Sign In" ? (
+              [
+                { text: "100%", label: "Conflict-free bookings" },
+                { text: "3", label: "Permission Levels" },
+                { text: "∞", label: "Scalable events" },
+              ].map((s) => (
+                <div
+                  key={s.label}
+                  className="bg-white/5 rounded-xl p-4 border border-white/10"
+                >
+                  <div className="font-family-display text-2xl font-bold text-amber-400">
+                    {s.text}
+                  </div>
+                  <div className="text-xs text-slate-400 mt-1">{s.label}</div>
                 </div>
-                <div className="text-xs text-slate-400 mt-1">{s.label}</div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <ul className="flex flex-col gap-5 p-6 bg-[#0B0F19]">
+                {[
+                  "No double booking, ever",
+                  "Real-time availability",
+                  "Instant approval notifications",
+                ].map((features, index) => (
+                  <li key={index} className="flex items-center">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#D9852B]/20">
+                      <Check
+                        className="h-5 w-5 text-[#D9852B]"
+                        strokeWidth={2.5}
+                      />
+                    </div>
+                    <span className="text-[17px] tracking-tight font-medium text-slate-300">
+                      {features}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
 
@@ -167,17 +208,148 @@ const MainPage = () => {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {mode === "Sign Up" && (
+            {mode === "Sign Up" ? (
               <>
-                <Field icon={<User className="w-4 h-4" />} label="Full Name">
+                <Field icon={<User className="w-4 h-4" />} label="Username">
                   <input
                     required
                     value={form.username}
                     onChange={handleFormChange}
-                    placeholder="Dr. Jane Smith"
+                    placeholder="Dr. Folarin Balogun"
                     className="auth-input"
+                    type="text"
+                    name="username"
                   />
                 </Field>
+                <Field
+                  icon={<Mail className="h-4 w-4" />}
+                  label="Email Address"
+                >
+                  <input
+                    required
+                    value={form.email}
+                    placeholder="folarinbalogun@gmail.com"
+                    className="auth-input"
+                    onChange={handleFormChange}
+                    type="mail"
+                    name="email"
+                  />
+                </Field>
+
+                <Field
+                  icon={<Lock className="w-4 h-4" />}
+                  label="Password"
+                  action={
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((p) => !p)}
+                      className="text-slate-400 hover:text-slate-600 cursor-pointer"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
+                  }
+                >
+                  <input
+                    required
+                    type={showPassword ? "text" : "password"}
+                    value={form.password}
+                    onChange={handleFormChange}
+                    placeholder="••••••••"
+                    minLength={6}
+                    className="auth-input"
+                    name="password"
+                  />
+                </Field>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full mt-4 py-3 px-4 cursor-pointer text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-60 shadow-sm bg-[#0D1A38] hover:bg-[#152754]"
+                >
+                  {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {mode === "Sign Up" ? "Sign up" : "Sign in"}
+                </button>
+
+                <div className="flex items-center my-4">
+                  <div className="grow border-t border-slate-200"></div>
+                  <span className="px-3 text-sm text-slate-400 font-medium">
+                    or
+                  </span>
+                  <div className="grow border-t border-slate-200"></div>
+                </div>
+                <div className="w-full">
+                  {" "}
+                  <GoogleButton />
+                </div>
+              </>
+            ) : (
+              <>
+                {" "}
+                <Field
+                  icon={<Mail className="h-4 w-4" />}
+                  label="Email Address"
+                >
+                  <input
+                    required
+                    value={form.email}
+                    placeholder="folarinbalogun@gmail.com"
+                    className="auth-input"
+                    onChange={handleFormChange}
+                    type="mail"
+                    name="email"
+                  />
+                </Field>
+                <Field
+                  icon={<Lock className="w-4 h-4" />}
+                  label="Password"
+                  action={
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((p) => !p)}
+                      className="text-slate-400 hover:text-slate-600 cursor-pointer"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
+                  }
+                >
+                  <input
+                    required
+                    type={showPassword ? "text" : "password"}
+                    value={form.password}
+                    onChange={handleFormChange}
+                    placeholder="••••••••"
+                    minLength={6}
+                    className="auth-input"
+                    name="password"
+                  />
+                </Field>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full mt-4 py-3 px-4 cursor-pointer text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-60 shadow-sm bg-[#0D1A38] hover:bg-[#152754]"
+                >
+                  {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {mode === "Sign Up" ? "Sign up" : "Sign in"}
+                </button>
+                <div className="flex items-center my-4">
+                  <div className="grow border-t border-slate-200"></div>
+                  <span className="px-3 text-sm text-slate-400 font-medium">
+                    or
+                  </span>
+                  <div className="grow border-t border-slate-200"></div>
+                </div>
+                <div className="w-full">
+                  {" "}
+                  <GoogleButton />
+                </div>
               </>
             )}
           </form>
