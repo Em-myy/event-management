@@ -50,25 +50,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
   }, []);
 
-  const handleLogout = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-
-      if (error) {
-        console.log(error.message);
-      }
-
-      router.push("/");
-
-      router.refresh();
-    } catch (error) {
-      console.log(error);
+  const handleSignout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.log(error.message);
     }
+    router.push("/");
+    router.refresh();
   };
 
   return (
     <AuthContext.Provider
-      value={{ user, avatarUrl, initial, displayName, loading, handleLogout }}
+      value={{ user, avatarUrl, initial, displayName, loading, handleSignout }}
     >
       {children}
     </AuthContext.Provider>
