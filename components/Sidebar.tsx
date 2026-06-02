@@ -84,6 +84,8 @@ const Sidebar = ({ profile }) => {
           </div>
         </div>
       </div>
+
+      <div>Qiiii</div>
     </aside>
   );
 };
