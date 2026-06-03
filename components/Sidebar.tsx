@@ -8,6 +8,7 @@ import {
   CheckSquare,
   ChevronRight,
   LayoutDashboard,
+  LogOut,
   Settings,
 } from "lucide-react";
 import Link from "next/link";
@@ -82,10 +83,21 @@ const Sidebar = ({ profile }) => {
           <div className="w-8 h-8 rounded-lg bg-linear-to-br from-amber-400 to-amber-600 flex items-center justify-center text-xs font-bold text-white shrink-0">
             {avatarUrl || initials}
           </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-semibold text-slate-500 truncate">
+              {displayName}
+            </div>
+            <div className="text-[10px] text-slate-500 truncate"></div>
+          </div>
+          <button
+            onClick={handleLogout}
+            title="Sign out"
+            className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-400/10 transition-all"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
-
-      <div>Qiiii</div>
     </aside>
   );
 };
