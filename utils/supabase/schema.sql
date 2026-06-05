@@ -1,4 +1,4 @@
-CREATE EXTENSION IF NOT EXISTS "uuit-ossp";
+CREATE EXTENSION IF NOT EXISTS "uuiD-ossp";
 
 CREATE TABLE IF NOT EXISTS roles (
     id SERIAL PRIMARY KEY,
@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS resources (
     condition TEXT NOT NULL DEFAULT 'Good',
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW() 
-)
+);
 
 CREATE TABLE IF NOT EXISTS events (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -61,4 +61,30 @@ CREATE TABLE IF NOT EXISTS event_resources (
     event_id UUID NOT NULL REFERENCES events(id) ON DELETE CASCADE,
     resource_id UUID NOT NULL REFERENCES resources(id),
     quantity_requested INTEGER NOT NULL DEFAULT 1 CHECK (quantity_requested > 0)
+);
+
+
+CREATE OR REPLACE FUNCTION get_available_venues(
+    p_start TIMESTAMPTZ, 
+    p_end TIMESTAMPTZ, 
+    p_exclude_event_id UUID DEFAULT NULL
 )
+RETURNS TABLE(id UUID, name TEXT, location TEXT, capacity INTEGER, description TEXT)
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT v.id, v.name, v.location, v.capacity, v.description
+    FROM venues v
+    WHERE v.is_active = TRUE
+        AND v.id NOT IN (
+            SELECT e.venue_id
+            FROM events e
+            WHERE e.status = 'approved'
+                AND e.start_time < p_end
+                AND e.end_time > p_start
+                AND e.venue_id IS NOT NULL
+                AND (p_exclude_event_id IS NULL OR e.id != p_exclude_event_id)
+        )
+    ORDER BY v.name;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
