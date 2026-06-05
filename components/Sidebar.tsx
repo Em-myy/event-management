@@ -98,6 +98,7 @@ const Sidebar = ({ profile }) => {
           </button>
         </div>
       </div>
+      <h1>Just writing the SQL in supabase</h1>
     </aside>
   );
 };
