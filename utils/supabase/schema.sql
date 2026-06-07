@@ -1,4 +1,4 @@
-CREATE EXTENSION IF NOT EXISTS "uuiD-ossp";
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE TABLE IF NOT EXISTS roles (
     id SERIAL PRIMARY KEY,
@@ -46,8 +46,8 @@ CREATE TABLE IF NOT EXISTS events (
     description TEXT,
     user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
     venue_id UUID REFERENCES venues(id),
-    start_time TIMESTAMPTZ NOT,
-    end_time TIMESTAMPTZ NOT,
+    start_time TIMESTAMPTZ NOT NULL,
+    end_time TIMESTAMPTZ NOT NULL,
     status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
     rejection_reason TEXT,
     approved_by UUID REFERENCES profiles(id),
@@ -70,7 +70,7 @@ CREATE TABLE IF NOT EXISTS invites (
     invited_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
     status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN('pending', 'accepted', 'expired', 'cancelled')),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    accepted_at TIMESTAMPTZ,
+    accepted_at TIMESTAMPTZ
 )
 
 
@@ -111,9 +111,9 @@ AS $$
 BEGIN
     RETURN QUERY
     SELECT
-        r.id, r.name, r.description, r.condition, r.available_quantity
-        COALESCE(SUM(er.quantity_requested), 0):: INTEGER AS allocated,
-        (r.total_quantity - COALESCE(SUM(er.quantity_requested), 0)):: INTEGER AS allocated
+        r.id, r.name, r.description, r.condition, r.total_quantity,
+        COALESCE(SUM(er.quantity_requested), 0)::INTEGER AS allocated,
+        (r.total_quantity - COALESCE(SUM(er.quantity_requested), 0))::INTEGER AS available
     FROM resources r
     LEFT JOIN event_resources er ON er.resource_id = r.id
     LEFT JOIN events e
@@ -129,12 +129,12 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 
-ALTER TABLE profiles        ENABLE ROW LEVEL SECURITY
-ALTER TABLE venues          ENABLE ROW LEVEL SECURITY
-ALTER TABLE resources       ENABLE ROW LEVEL SECURITY
-ALTER TABLE events          ENABLE ROW LEVEL SECURITY
-ALTER TABLE event_resources ENABLE ROW LEVEL SECURITY
-ALTER TABLE invites         ENABLE ROW LEVEL SECURITY
+ALTER TABLE profiles        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE venues          ENABLE ROW LEVEL SECURITY;
+ALTER TABLE resources       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE events          ENABLE ROW LEVEL SECURITY;
+ALTER TABLE event_resources ENABLE ROW LEVEL SECURITY;
+ALTER TABLE invites         ENABLE ROW LEVEL SECURITY;
 
 
 CREATE OR REPLACE FUNCTION auth_has_role(role_name TEXT)
