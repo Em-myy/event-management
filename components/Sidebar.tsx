@@ -14,6 +14,10 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
+type profileType = {
+  profile: { username: string; email: string; role_id: number };
+};
+
 const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, minRole: 1 },
   { href: "/bookings", label: "My Bookings", icon: CalendarDays, minRole: 1 },
@@ -26,7 +30,7 @@ const NAV = [
   { href: "/approvals", label: "Approvals", icon: CheckSquare, minRole: 2 },
   { href: "/admin", label: "Admin Panel", icon: Settings, minRole: 3 },
 ];
-const Sidebar = ({ profile }) => {
+const Sidebar = ({ profile }: profileType) => {
   const pathname = usePathname();
   const roleId = profile?.role_id ?? 1;
 
@@ -87,7 +91,9 @@ const Sidebar = ({ profile }) => {
             <div className="text-sm font-semibold text-slate-500 truncate">
               {displayName}
             </div>
-            <div className="text-[10px] text-slate-500 truncate"></div>
+            <div className="text-[10px] text-slate-500 truncate">
+              {profile?.role_id}
+            </div>
           </div>
           <button
             onClick={handleLogout}
