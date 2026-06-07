@@ -14,7 +14,7 @@ on CONFLICT (name) DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS profiles (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-    USERNAME TEXT,
+    username TEXT,
     email TEXT,
     role_id INTEGER NOT NULL REFERENCES roles(id) DEFAULT 1,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW() 
