@@ -63,6 +63,16 @@ CREATE TABLE IF NOT EXISTS event_resources (
     quantity_requested INTEGER NOT NULL DEFAULT 1 CHECK (quantity_requested > 0)
 );
 
+CREATE TABLE IF NOT EXISTS invites (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    email TEXT NOT NULL,
+    role_id INTEGER NOT NULL REFERENCES roles(id),
+    invited_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN('pending', 'accepted', 'expired', 'cancelled')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    accepted_at TIMESTAMPTZ,
+)
+
 
 CREATE OR REPLACE FUNCTION get_available_venues(
     p_start TIMESTAMPTZ, 
@@ -124,6 +134,7 @@ ALTER TABLE venues          ENABLE ROW LEVEL SECURITY
 ALTER TABLE resources       ENABLE ROW LEVEL SECURITY
 ALTER TABLE events          ENABLE ROW LEVEL SECURITY
 ALTER TABLE event_resources ENABLE ROW LEVEL SECURITY
+ALTER TABLE invites         ENABLE ROW LEVEL SECURITY
 
 
 CREATE OR REPLACE FUNCTION auth_has_role(role_name TEXT)
@@ -161,20 +172,37 @@ CREATE POLICY "er_select" ON event_resources FOR SELECT USING (EXISTS (SELECT 1 
 CREATE POLICY "er_insert" ON event_resources FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM events e WHERE e.id = event_id AND e.user_id = auth.uid()));
 CREATE POLICY "er_delete" ON event_resources FOR DELETE USING (EXISTS (SELECT 1 FROM events e WHERE e.id = event_id AND e.user_id = auth.uid()));
 
+CREATE POLICY "invites_admin_all" ON invites FOR ALL USING (auth_has_role('admin'));
+
 
 CREATE OR REPLACE FUNCTION handle_new_user()
 RETURNS TRIGGER AS $$
+DECLARE 
+    v_role_id INTEGER;
 BEGIN
+    v_role_id := COALESCE(
+        (NEW.raw_user_meta_data->>'role_id')::INTEGER,
+        1
+    );
+
     INSERT INTO profiles(id, username, email, role_id)
     VALUES(
         NEW.id,
         COALESCE(NEW.raw_user_meta_data->>'username', split_part(NEW.email, '@', 1)),
         NEW.email,
-        1
+        v_role_id
     ) ON CONFLICT (id) DO NOTHING;
+
+    UPDATE invites
+    SET status = 'accepted', accepted_at = NOW()
+    WHERE LOWER(email) = LOWER(NEW.email)
+    AND status = 'pending';
+
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 
 CREATE TRIGGER on_auth_user_created
     AFTER INSERT ON auth.users
