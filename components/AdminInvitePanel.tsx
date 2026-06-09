@@ -1,0 +1,457 @@
+'use client';
+
+import { useState }  from 'react';
+import { useRouter } from 'next/navigation';
+import {
+  Mail, UserPlus, Send, RefreshCw, X,
+  Clock, CheckCircle2, XCircle, Loader2,
+  AlertCircle, ChevronDown, Building, Info,
+} from 'lucide-react';
+import { formatDateTime } from '@/lib/utils';
+
+/* ── Role options ─────────────────────────────────────────── */
+const ROLES = [
+  {
+    value: 1,
+    label: 'Lecturer (General User)',
+    desc:  'Can view the event calendar, create booking requests, and track their own submissions.',
+  },
+  {
+    value: 2,
+    label: 'HOD / Event Coordinator',
+    desc:  'Everything a Lecturer can do, plus the ability to approve or reject booking requests.',
+  },
+];
+
+/* ── Status badge config ──────────────────────────────────── */
+const STATUS = {
+  pending:   { label: 'Pending',   cls: 'bg-amber-50   text-amber-700   border-amber-200',   Icon: Clock        },
+  accepted:  { label: 'Accepted',  cls: 'bg-emerald-50 text-emerald-700 border-emerald-200', Icon: CheckCircle2 },
+  cancelled: { label: 'Cancelled', cls: 'bg-slate-100  text-slate-500   border-slate-200',   Icon: XCircle      },
+  expired:   { label: 'Expired',   cls: 'bg-red-50     text-red-600     border-red-200',      Icon: AlertCircle  },
+};
+
+export default function AdminInvitePanel({ initialInvites = [] }) {
+  const router = useRouter();
+
+  /* ── Form state ─────────────────────────────────────────── */
+  const [email,      setEmail]      = useState('');
+  const [roleId,     setRoleId]     = useState(1);
+  const [department, setDepartment] = useState('');
+  const [roleOpen,   setRoleOpen]   = useState(false);
+
+  /* ── UI state ────────────────────────────────────────────── */
+  const [invites,  setInvites]  = useState(initialInvites);
+  const [sending,  setSending]  = useState(false);
+  const [actionId, setActionId] = useState(null);
+  const [success,  setSuccess]  = useState('');
+  const [error,    setError]    = useState('');
+
+  const selectedRole = ROLES.find(r => r.value === roleId);
+
+  /* ── Helpers ─────────────────────────────────────────────── */
+  function clearFeedback() { setSuccess(''); setError(''); }
+
+  async function callApi(url, body) {
+    const res  = await fetch(url, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error ?? 'Request failed');
+    return data;
+  }
+
+  /* ── Send invite ─────────────────────────────────────────── */
+  async function sendInvite(e) {
+    e.preventDefault();
+    clearFeedback();
+
+    if (!email.trim()) {
+      setError('Please enter an email address.');
+      return;
+    }
+
+    setSending(true);
+    try {
+      const data = await callApi('/api/admin/invite', {
+        email:      email.trim(),
+        role_id:    roleId,
+        department: department.trim() || null,
+      });
+      setSuccess(data.message);
+      setEmail('');
+      setDepartment('');
+      setRoleId(1);
+      router.refresh();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSending(false);
+    }
+  }
+
+  /* ── Resend invite ───────────────────────────────────────── */
+  async function resend(inviteId) {
+    clearFeedback();
+    setActionId(inviteId);
+    try {
+      const data = await callApi('/api/admin/invite/resend', {
+        invite_id: inviteId,
+      });
+      setSuccess(data.message);
+      router.refresh();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setActionId(null);
+    }
+  }
+
+  /* ── Cancel invite ───────────────────────────────────────── */
+  async function cancel(inviteId, inviteEmail) {
+    if (!confirm(
+      `Cancel the invite for ${inviteEmail}?\n` +
+      'They will no longer be able to use the existing link.'
+    )) return;
+
+    clearFeedback();
+    setActionId(inviteId);
+    try {
+      const data = await callApi('/api/admin/invite/cancel', {
+        invite_id: inviteId,
+      });
+      setSuccess(data.message);
+      setInvites(prev =>
+        prev.map(i => i.id === inviteId ? { ...i, status: 'cancelled' } : i),
+      );
+      router.refresh();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setActionId(null);
+    }
+  }
+
+  /* ── Render ──────────────────────────────────────────────── */
+  return (
+    <div className="space-y-6 animate-fade-in">
+
+      {/* ════ Send Invite Card ════════════════════════════════ */}
+      <div className="card overflow-visible">
+
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+          <div
+            className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+            style={{ background: '#0D1A38' }}
+          >
+            <UserPlus className="w-4 h-4 text-amber-400" />
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-slate-900">
+              Send an invite
+            </h3>
+            <p className="text-xs text-slate-500 mt-0.5">
+              The user gets a secure sign-up link by email.
+              Their role is applied automatically when they register.
+            </p>
+          </div>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={sendInvite} className="p-6">
+
+          {/* Success banner */}
+          {success && (
+            <div className="flex items-start gap-3 bg-emerald-50 border border-emerald-200
+                            text-emerald-700 rounded-xl px-4 py-3 text-sm mb-5 animate-fade-in">
+              <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
+              <div>
+                <p className="font-semibold">Invite sent!</p>
+                <p className="text-xs mt-0.5 opacity-80">{success}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Error banner */}
+          {error && (
+            <div className="flex items-start gap-3 bg-red-50 border border-red-200
+                            text-red-700 rounded-xl px-4 py-3 text-sm mb-5 animate-fade-in">
+              <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+              <div>
+                <p className="font-semibold">Could not send invite</p>
+                <p className="text-xs mt-0.5 opacity-80">{error}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Email + Department */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-600
+                                uppercase tracking-wide mb-1.5">
+                Email address *
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={e => { setEmail(e.target.value); clearFeedback(); }}
+                  placeholder="staff@institution.edu"
+                  className="field-input pl-9"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-600
+                                uppercase tracking-wide mb-1.5">
+                Department{' '}
+                <span className="text-slate-400 font-normal normal-case">(optional)</span>
+              </label>
+              <div className="relative">
+                <Building className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  value={department}
+                  onChange={e => setDepartment(e.target.value)}
+                  placeholder="e.g. Computer Science"
+                  className="field-input pl-9"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Role selector */}
+          <div className="mb-4">
+            <label className="block text-xs font-semibold text-slate-600
+                              uppercase tracking-wide mb-1.5">
+              Assign role *
+            </label>
+            <div className="relative">
+              {/* Trigger */}
+              <button
+                type="button"
+                onClick={() => setRoleOpen(p => !p)}
+                className="w-full flex items-center justify-between px-4 py-2.5
+                           border border-slate-300 rounded-xl bg-white text-sm
+                           font-medium text-slate-900 hover:border-slate-400
+                           transition-colors text-left"
+              >
+                <span>{selectedRole?.label}</span>
+                <ChevronDown
+                  className={`w-4 h-4 text-slate-400 transition-transform duration-200
+                              ${roleOpen ? 'rotate-180' : ''}`}
+                />
+              </button>
+
+              {/* Dropdown */}
+              {roleOpen && (
+                <div className="absolute z-30 top-full mt-1 w-full bg-white border
+                                border-slate-200 rounded-xl shadow-lg overflow-hidden">
+                  {ROLES.map(opt => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => {
+                        setRoleId(opt.value);
+                        setRoleOpen(false);
+                        clearFeedback();
+                      }}
+                      className={`w-full text-left px-4 py-3 transition-colors
+                                  border-b border-slate-100 last:border-0 hover:bg-slate-50
+                                  ${roleId === opt.value ? 'bg-amber-50' : ''}`}
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-slate-900">{opt.label}</p>
+                          <p className="text-xs text-slate-500 mt-0.5">{opt.desc}</p>
+                        </div>
+                        {roleId === opt.value && (
+                          <div className="w-5 h-5 rounded-full bg-amber-500 flex items-center
+                                          justify-center shrink-0">
+                            <CheckCircle2 className="w-3 h-3 text-white" />
+                          </div>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Info box */}
+          <div className="flex items-start gap-3 bg-slate-50 border border-slate-200
+                          rounded-xl px-4 py-3 mb-5">
+            <Info className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
+            <p className="text-xs text-slate-500 leading-relaxed">
+              <span className="font-semibold text-slate-700">How it works: </span>
+              Supabase emails a secure one-time sign-up link. When the user
+              clicks it and creates their password, they are automatically
+              assigned the role selected above — no manual update needed.
+            </p>
+          </div>
+
+          {/* Submit */}
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={sending}
+              className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold
+                         text-white rounded-xl transition-all hover:opacity-90
+                         disabled:opacity-60 disabled:cursor-not-allowed shadow-sm"
+              style={{ background: '#0D1A38' }}
+            >
+              {sending
+                ? <Loader2 className="w-4 h-4 animate-spin" />
+                : <Send className="w-4 h-4" />
+              }
+              {sending ? 'Sending…' : 'Send Invite'}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* ════ Invite History Table ════════════════════════════ */}
+      <div className="card overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-slate-900">Invite history</h3>
+          <span className="text-xs text-slate-400">{invites.length} total</span>
+        </div>
+
+        {invites.length === 0 ? (
+          <div className="px-6 py-16 text-center">
+            <Mail className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+            <p className="text-sm font-medium text-slate-500">No invites sent yet</p>
+            <p className="text-xs text-slate-400 mt-1">
+              Use the form above to invite lecturers and HODs.
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Email</th>
+                  <th>Role assigned</th>
+                  <th>Department</th>
+                  <th>Invited by</th>
+                  <th>Date sent</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {invites.map(inv => {
+                  const cfg         = STATUS[inv.status] ?? STATUS.pending;
+                  const { Icon }    = cfg;
+                  const isActioning = actionId === inv.id;
+                  const roleName    = inv.role_id === 2
+                    ? 'HOD / Coordinator'
+                    : 'Lecturer';
+
+                  return (
+                    <tr key={inv.id}>
+                      {/* Email */}
+                      <td className="font-medium text-slate-900">
+                        {inv.email}
+                      </td>
+
+                      {/* Role badge */}
+                      <td>
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full
+                                      text-xs font-semibold border ${
+                            inv.role_id === 2
+                              ? 'bg-amber-50 text-amber-700 border-amber-200'
+                              : 'bg-blue-50  text-blue-700  border-blue-200'
+                          }`}
+                        >
+                          {roleName}
+                        </span>
+                      </td>
+
+                      {/* Department */}
+                      <td className="text-slate-500">
+                        {inv.department || '—'}
+                      </td>
+
+                      {/* Invited by */}
+                      <td className="text-slate-500">
+                        {inv.profiles?.full_name ?? 'Admin'}
+                      </td>
+
+                      {/* Date sent */}
+                      <td className="text-slate-500 whitespace-nowrap">
+                        {formatDateTime(inv.created_at)}
+                      </td>
+
+                      {/* Status badge */}
+                      <td>
+                        <span
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5
+                                      rounded-full text-xs font-semibold border ${cfg.cls}`}
+                        >
+                          <Icon className="w-3 h-3" />
+                          {cfg.label}
+                        </span>
+                      </td>
+
+                      {/* Actions */}
+                      <td>
+                        {inv.status === 'pending' && (
+                          <div className="flex items-center gap-2">
+                            {/* Resend */}
+                            <button
+                              onClick={() => resend(inv.id)}
+                              disabled={isActioning}
+                              title="Resend invite email"
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600
+                                         hover:bg-blue-50 transition-all disabled:opacity-50"
+                            >
+                              {isActioning
+                                ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                : <RefreshCw className="w-3.5 h-3.5" />
+                              }
+                            </button>
+                            {/* Cancel */}
+                            <button
+                              onClick={() => cancel(inv.id, inv.email)}
+                              disabled={isActioning}
+                              title="Cancel invite"
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-red-600
+                                         hover:bg-red-50 transition-all disabled:opacity-50"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
+
+                        {inv.status === 'accepted' && (
+                          <span className="text-xs text-slate-400">
+                            Joined {inv.accepted_at
+                              ? formatDateTime(inv.accepted_at)
+                              : ''}
+                          </span>
+                        )}
+
+                        {['cancelled', 'expired'].includes(inv.status) && (
+                          <span className="text-xs text-slate-400">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

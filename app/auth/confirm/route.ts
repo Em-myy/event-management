@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { type NextRequest } from "next/server";
 
 import { createClient } from "@/utils/supabase/server";
+import { syncRoleFromInviteMetadata } from "@/utils/supabase/sync-role";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -13,18 +14,21 @@ export async function GET(request: NextRequest) {
   if (token_hash && type) {
     const supabase = await createClient();
 
-    const { error } = await supabase.auth.verifyOtp({
+    const { data, error } = await supabase.auth.verifyOtp({
       type,
       token_hash,
     });
+
     if (!error) {
-      // redirect user to specified redirect URL or root of app
+      // This was an admin invite link — apply the pre-assigned role
+      if (type === "invite" && data.user) {
+        await syncRoleFromInviteMetadata(data.user);
+      }
       redirect(next);
     } else {
       console.log(error.message);
     }
   }
 
-  // redirect the user to an error page with some instructions
   redirect("/auth/auth-code-error");
 }
