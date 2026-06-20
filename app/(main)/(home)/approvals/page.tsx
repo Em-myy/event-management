@@ -1,8 +1,28 @@
-import { createClient }  from '@/lib/supabase/server';
 import { redirect }      from 'next/navigation';
-import { formatDateTime, StatusBadge } from '@/lib/utils';
+import { formatDateTime } from "@/utils/format";
+import { StatusBadge } from "@/utils/status-badge";
 import ApprovalButtons   from '@/components/ApprovalButtons';
 import { CheckSquare, Clock } from 'lucide-react';
+import { createClient } from '@/utils/supabase/server';
+import { Database } from '@/types/database.types';
+
+type ApprovalBookingWithRelations = Database['public']['Tables']['events']['Row'] & {
+  profiles: {
+    username: string | null;
+    email: string | null;
+  } | null;
+  venues: {
+    name: string;
+    location: string | null;
+    capacity: number;
+  } | null;
+  event_resources: Array<{
+    quantity_requested: number;
+    resources: {
+      name: string;
+    } | null;
+  }>;
+}
 
 export const metadata = { title: 'Approvals — ESRMS' };
 
@@ -23,7 +43,7 @@ export default async function ApprovalsPage() {
     .eq('status', 'pending')
     .order('created_at', { ascending: true });
 
-  const bookings = pending ?? [];
+  const bookings = (pending ?? []) as unknown as ApprovalBookingWithRelations[];
 
   return (
     <div className="animate-fade-in">
@@ -61,9 +81,8 @@ export default async function ApprovalsPage() {
                     {bk.description && <p className="text-sm text-slate-500 mb-4">{bk.description}</p>}
                     <div className="grid sm:grid-cols-2 gap-3">
                       <InfoCard label="Requester">
-                        <p className="font-semibold text-slate-900">{requester?.full_name ?? '—'}</p>
+                        <p className="font-semibold text-slate-900">{requester?.username ?? '—'}</p>
                         <p className="text-slate-500 text-xs">{requester?.email}</p>
-                        {requester?.department && <p className="text-slate-400 text-xs">{requester.department}</p>}
                       </InfoCard>
                       <InfoCard label="Schedule">
                         <p className="font-semibold text-slate-900">{formatDateTime(bk.start_time)}</p>
@@ -98,7 +117,7 @@ export default async function ApprovalsPage() {
   );
 }
 
-function InfoCard({ label, children }) {
+function InfoCard({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">{label}</p>

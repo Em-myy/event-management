@@ -1,14 +1,33 @@
 'use client';
 
-import { useState }     from 'react';
-import { useRouter }    from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
-import { format }       from 'date-fns';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { format } from 'date-fns';
 import {
   CalendarDays, MapPin, Package, ClipboardCheck,
   ChevronRight, ChevronLeft, Check, Loader2, AlertCircle, Users, Info,
 } from 'lucide-react';
+import { createClient } from '@/utils/supabase/client';
+import { Database } from '@/types/database.types';
 
+/* ── Interfaces ───────────────────────────────────────────── */
+interface EventDetails {
+  title: string;
+  description: string;
+  date: string;
+  start_time: string;
+  end_time: string;
+}
+
+// 1. Extract the exact return type of your Venue RPC
+type AvailableVenue = Database['public']['Functions']['get_available_venues']['Returns'][number];
+
+// 2. Extract the exact return type of your Resource RPC, and add our UI 'qty' property to it
+type AvailableResource = Database['public']['Functions']['get_resources_availability']['Returns'][number] & {
+  qty: number;
+};
+
+/* ── Constants ────────────────────────────────────────────── */
 const STEPS = [
   { id: 1, label: 'Event Details',   icon: CalendarDays   },
   { id: 2, label: 'Select Venue',    icon: MapPin         },
@@ -20,78 +39,115 @@ export default function BookingWizard() {
   const router   = useRouter();
   const supabase = createClient();
 
-  const [step,      setStep]      = useState(1);
-  const [loading,   setLoading]   = useState(false);
-  const [error,     setError]     = useState('');
-  const [details,   setDetails]   = useState({ title: '', description: '', date: '', start_time: '', end_time: '' });
-  const [venues,    setVenues]    = useState([]);
-  const [venue,     setVenue]     = useState(null);
-  const [resources, setResources] = useState([]);
-  const [submitted, setSubmitted] = useState(false);
+  /* ── State ──────────────────────────────────────────────── */
+  const [step,         setStep]         = useState(1);
+  const [loading,      setLoading]      = useState(false);
+  const [error,        setError]        = useState('');
+  const [details,      setDetails]      = useState<EventDetails>({ title: '', description: '', date: '', start_time: '', end_time: '' });
+  const [venues,       setVenues]       = useState<AvailableVenue[]>([]);
+  const [venue,        setVenue]        = useState<AvailableVenue | null>(null);
+  const [resources,    setResources]    = useState<AvailableResource[]>([]);
+  const [submitted,    setSubmitted]    = useState(false);
 
+  /* ── Handlers ───────────────────────────────────────────── */
   async function goToVenueStep() {
     setError('');
-    if (!details.title || !details.date || !details.start_time || !details.end_time)
+    if (!details.title || !details.date || !details.start_time || !details.end_time) {
       return setError('Please fill in all required fields.');
+    }
+    
     const start = new Date(`${details.date}T${details.start_time}`);
     const end   = new Date(`${details.date}T${details.end_time}`);
-    if (end <= start) return setError('End time must be after start time.');
+    
+    if (end <= start) {
+      return setError('End time must be after start time.');
+    }
 
     setLoading(true);
-    const { data, error: err } = await supabase.rpc('get_available_venues', {
-      p_start: start.toISOString(), p_end: end.toISOString(),
-    });
-    setLoading(false);
-    if (err) return setError(err.message);
-    setVenues(data ?? []);
-    setStep(2);
+    try {
+      const { data, error: err } = await supabase.rpc('get_available_venues', {
+        p_start: start.toISOString(), 
+        p_end: end.toISOString(),
+      });
+      
+      if (err) throw err;
+      
+      setVenues(data ?? []);
+      setStep(2);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch venues');
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function goToResourceStep() {
     if (!venue) return setError('Please select a venue.');
     setError('');
     setLoading(true);
+    
     const start = new Date(`${details.date}T${details.start_time}`);
     const end   = new Date(`${details.date}T${details.end_time}`);
-    const { data, error: err } = await supabase.rpc('get_resource_availability', {
-      p_start: start.toISOString(), p_end: end.toISOString(),
-    });
-    setLoading(false);
-    if (err) return setError(err.message);
-    setResources((data ?? []).map(r => ({ ...r, qty: 0 })));
-    setStep(3);
+    
+    try {
+      const { data, error: err } = await supabase.rpc('get_resources_availability', {
+        p_start: start.toISOString(), 
+        p_end: end.toISOString(),
+      });
+      
+      if (err) throw err;
+      
+      setResources((data ?? []).map((r: any) => ({ ...r, qty: 0 })));
+      setStep(3);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch resources');
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function submit() {
     setError('');
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) throw new Error('You must be logged in to book an event.');
+
       const start = new Date(`${details.date}T${details.start_time}`);
       const end   = new Date(`${details.date}T${details.end_time}`);
 
       const { data: event, error: evErr } = await supabase.from('events').insert({
-        title: details.title, description: details.description,
-        user_id: user.id, venue_id: venue.id,
-        start_time: start.toISOString(), end_time: end.toISOString(), status: 'pending',
+        title: details.title, 
+        description: details.description,
+        user_id: user.id, 
+        venue_id: venue!.id,
+        start_time: start.toISOString(), 
+        end_time: end.toISOString(), 
+        status: 'pending',
       }).select().single();
+      
       if (evErr) throw evErr;
 
       const toInsert = resources.filter(r => r.qty > 0).map(r => ({
-        event_id: event.id, resource_id: r.id, quantity_requested: r.qty,
+        event_id: event.id, 
+        resource_id: r.id, 
+        quantity_requested: r.qty,
       }));
+      
       if (toInsert.length > 0) {
         const { error: resErr } = await supabase.from('event_resources').insert(toInsert);
         if (resErr) throw resErr;
       }
+      
       setSubmitted(true);
     } catch (err) {
-      setError(err.message ?? 'Submission failed.');
+      setError(err instanceof Error ? err.message : 'Submission failed.');
     } finally {
       setLoading(false);
     }
   }
 
+  /* ── Success State ──────────────────────────────────────── */
   if (submitted) return (
     <div className="card p-12 text-center max-w-md mx-auto animate-fade-in">
       <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-5">
@@ -107,6 +163,7 @@ export default function BookingWizard() {
     </div>
   );
 
+  /* ── Render ─────────────────────────────────────────────── */
   return (
     <div className="max-w-2xl mx-auto">
       {/* Step indicator */}
@@ -141,25 +198,47 @@ export default function BookingWizard() {
         {step === 1 && <Step1 details={details} setDetails={setDetails} onNext={goToVenueStep} loading={loading} />}
         {step === 2 && <Step2 venues={venues} selected={venue} setSelected={setVenue} onBack={() => setStep(1)} onNext={goToResourceStep} loading={loading} />}
         {step === 3 && <Step3 resources={resources} setResources={setResources} onBack={() => setStep(2)} onNext={() => setStep(4)} />}
-        {step === 4 && <Step4 details={details} venue={venue} resources={resources.filter(r => r.qty > 0)} onBack={() => setStep(3)} onSubmit={submit} loading={loading} />}
+        {step === 4 && <Step4 details={details} venue={venue!} resources={resources.filter(r => r.qty > 0)} onBack={() => setStep(3)} onSubmit={submit} loading={loading} />}
       </div>
     </div>
   );
 }
 
-function Step1({ details, setDetails, onNext, loading }) {
-  const set   = (k, v) => setDetails(p => ({ ...p, [k]: v }));
+/* ═══════════════════════════════════════════════════════════════
+   STEP COMPONENTS
+═══════════════════════════════════════════════════════════════ */
+
+interface Step1Props {
+  details: EventDetails;
+  setDetails: React.Dispatch<React.SetStateAction<EventDetails>>;
+  onNext: () => void;
+  loading: boolean;
+}
+
+function Step1({ details, setDetails, onNext, loading }: Step1Props) {
+  const set = (k: keyof EventDetails, v: string) => setDetails(p => ({ ...p, [k]: v }));
   const today = format(new Date(), 'yyyy-MM-dd');
+  
   return (
     <div>
       <SectionHeader icon={<CalendarDays className="w-5 h-5" />} title="Event Details" subtitle="Describe your event and set the schedule." />
       <div className="space-y-4 mt-6">
-        <FormField label="Event Title *"><input className="field-input" value={details.title} onChange={e => set('title', e.target.value)} placeholder="e.g. Annual Tech Symposium" /></FormField>
-        <FormField label="Description"><textarea className="field-input min-h-[80px] resize-none" value={details.description} onChange={e => set('description', e.target.value)} placeholder="Brief description..." rows={3} /></FormField>
-        <FormField label="Date *"><input className="field-input" type="date" min={today} value={details.date} onChange={e => set('date', e.target.value)} /></FormField>
+        <FormField label="Event Title *">
+          <input className="field-input w-full p-2 border rounded" value={details.title} onChange={e => set('title', e.target.value)} placeholder="e.g. Annual Tech Symposium" />
+        </FormField>
+        <FormField label="Description">
+          <textarea className="field-input min-h-[80px] resize-none w-full p-2 border rounded" value={details.description} onChange={e => set('description', e.target.value)} placeholder="Brief description..." rows={3} />
+        </FormField>
+        <FormField label="Date *">
+          <input className="field-input w-full p-2 border rounded" type="date" min={today} value={details.date} onChange={e => set('date', e.target.value)} />
+        </FormField>
         <div className="grid grid-cols-2 gap-4">
-          <FormField label="Start Time *"><input className="field-input" type="time" value={details.start_time} onChange={e => set('start_time', e.target.value)} /></FormField>
-          <FormField label="End Time *"><input className="field-input" type="time" value={details.end_time} onChange={e => set('end_time', e.target.value)} /></FormField>
+          <FormField label="Start Time *">
+            <input className="field-input w-full p-2 border rounded" type="time" value={details.start_time} onChange={e => set('start_time', e.target.value)} />
+          </FormField>
+          <FormField label="End Time *">
+            <input className="field-input w-full p-2 border rounded" type="time" value={details.end_time} onChange={e => set('end_time', e.target.value)} />
+          </FormField>
         </div>
       </div>
       <NavButtons onNext={onNext} loading={loading} nextLabel="Check Availability" />
@@ -167,7 +246,16 @@ function Step1({ details, setDetails, onNext, loading }) {
   );
 }
 
-function Step2({ venues, selected, setSelected, onBack, onNext, loading }) {
+interface Step2Props {
+ venues: AvailableVenue[];
+  selected: AvailableVenue | null;
+  setSelected: (v: AvailableVenue) => void;
+  onBack: () => void;
+  onNext: () => void;
+  loading: boolean;
+}
+
+function Step2({ venues, selected, setSelected, onBack, onNext, loading }: Step2Props) {
   return (
     <div>
       <SectionHeader icon={<MapPin className="w-5 h-5" />} title="Select Venue"
@@ -210,8 +298,16 @@ function Step2({ venues, selected, setSelected, onBack, onNext, loading }) {
   );
 }
 
-function Step3({ resources, setResources, onBack, onNext }) {
-  const setQty = (id, qty) => setResources(r => r.map(x => x.id === id ? { ...x, qty } : x));
+interface Step3Props {
+  resources: AvailableResource[];
+  setResources: React.Dispatch<React.SetStateAction<AvailableResource[]>>;
+  onBack: () => void;
+  onNext: () => void;
+}
+
+function Step3({ resources, setResources, onBack, onNext }: Step3Props) {
+  const setQty = (id: string | number, qty: number) => setResources(r => r.map(x => x.id === id ? { ...x, qty } : x));
+  
   return (
     <div>
       <SectionHeader icon={<Package className="w-5 h-5" />} title="Resource Allocation" subtitle="Select equipment needed. Quantities are capped at current availability." />
@@ -240,12 +336,21 @@ function Step3({ resources, setResources, onBack, onNext }) {
       <div className="mt-4 flex items-center gap-2 text-xs text-slate-400 bg-slate-50 rounded-lg px-3 py-2">
         <Info className="w-3.5 h-3.5 shrink-0" /> Resources are optional. Leave all at 0 to proceed without equipment.
       </div>
-      <NavButtons onBack={onBack} onNext={onNext} nextLabel="Review Booking" />
+      <NavButtons onBack={onBack} onNext={onNext} loading={false} nextLabel="Review Booking" />
     </div>
   );
 }
 
-function Step4({ details, venue, resources, onBack, onSubmit, loading }) {
+interface Step4Props {
+  details: EventDetails;
+  venue: AvailableVenue;
+  resources: AvailableResource[];
+  onBack: () => void;
+  onSubmit: () => void;
+  loading: boolean;
+}
+
+function Step4({ details, venue, resources, onBack, onSubmit, loading }: Step4Props) {
   return (
     <div>
       <SectionHeader icon={<ClipboardCheck className="w-5 h-5" />} title="Review & Submit" subtitle="Confirm your details before submitting for approval." />
@@ -277,9 +382,11 @@ function Step4({ details, venue, resources, onBack, onSubmit, loading }) {
   );
 }
 
-// ── Shared sub-components ─────────────────────────────────────
+/* ═══════════════════════════════════════════════════════════════
+   SHARED SUB-COMPONENTS
+═══════════════════════════════════════════════════════════════ */
 
-function SectionHeader({ icon, title, subtitle }) {
+function SectionHeader({ icon, title, subtitle }: { icon: React.ReactNode; title: string; subtitle: string }) {
   return (
     <div className="flex items-start gap-3">
       <div className="w-10 h-10 rounded-xl flex items-center justify-center text-amber-400 shrink-0" style={{ background: '#0D1A38' }}>{icon}</div>
@@ -291,7 +398,7 @@ function SectionHeader({ icon, title, subtitle }) {
   );
 }
 
-function FormField({ label, children }) {
+function FormField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
       <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">{label}</label>
@@ -300,7 +407,16 @@ function FormField({ label, children }) {
   );
 }
 
-function NavButtons({ onBack, onNext, loading, nextLabel = 'Next', nextDisabled = false, nextClass }) {
+interface NavButtonsProps {
+  onBack?: () => void;
+  onNext: () => void;
+  loading: boolean;
+  nextLabel?: string;
+  nextDisabled?: boolean;
+  nextClass?: string;
+}
+
+function NavButtons({ onBack, onNext, loading, nextLabel = 'Next', nextDisabled = false, nextClass }: NavButtonsProps) {
   return (
     <div className="flex items-center justify-between mt-8 pt-6 border-t border-slate-100">
       {onBack ? (
@@ -319,7 +435,7 @@ function NavButtons({ onBack, onNext, loading, nextLabel = 'Next', nextDisabled 
   );
 }
 
-function ReviewSection({ title, children }) {
+function ReviewSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="rounded-xl border border-slate-200 overflow-hidden">
       <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-200">
@@ -330,7 +446,7 @@ function ReviewSection({ title, children }) {
   );
 }
 
-function Row({ label, value }) {
+function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-start justify-between gap-4 text-sm">
       <span className="text-slate-500 shrink-0">{label}</span>

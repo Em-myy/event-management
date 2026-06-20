@@ -1,4 +1,4 @@
-import { redirect }      from 'next/navigation';
+import { redirect } from 'next/navigation';
 import { formatDateTime } from "@/utils/format";
 import { StatusBadge } from "@/utils/status-badge";
 import { CalendarDays, CheckCircle2, Clock, XCircle, ArrowRight, CalendarPlus } from 'lucide-react';
@@ -25,39 +25,49 @@ export default async function DashboardPage() {
       .eq('user_id', user.id).order('created_at', { ascending: false }).limit(5),
   ]);
 
-  const own      = ownQuery.data ?? [];
+  const own = ownQuery.data ?? [];
   const approved = own.filter(e => e.status === 'approved').length;
-  const pending  = own.filter(e => e.status === 'pending').length;
+  const pending = own.filter(e => e.status === 'pending').length;
   const rejected = own.filter(e => e.status === 'rejected').length;
   const pendingAll = pendingQuery.count ?? 0;
-  const recent     = recentQuery.data  ?? [];
+  const recent = recentQuery.data ?? [];
 
   const stats = [
-    { label: 'Total Bookings', value: own.length, icon: CalendarDays,  color: 'text-blue-500',    bg: 'bg-blue-50'    },
-    { label: 'Approved',       value: approved,   icon: CheckCircle2,  color: 'text-emerald-500', bg: 'bg-emerald-50' },
-    { label: 'Pending',        value: pending,    icon: Clock,         color: 'text-amber-500',   bg: 'bg-amber-50'   },
-    { label: 'Rejected',       value: rejected,   icon: XCircle,       color: 'text-red-500',     bg: 'bg-red-50'     },
+    { label: 'Total Bookings', value: own.length, icon: CalendarDays, color: 'text-blue-500', bg: 'bg-blue-50' },
+    { label: 'Approved', value: approved, icon: CheckCircle2, color: 'text-emerald-500', bg: 'bg-emerald-50' },
+    { label: 'Pending', value: pending, icon: Clock, color: 'text-amber-500', bg: 'bg-amber-50' },
+    { label: 'Rejected', value: rejected, icon: XCircle, color: 'text-red-500', bg: 'bg-red-50' },
   ];
 
-  const hour     = new Date().getHours();
+  const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
   return (
     <div className="animate-fade-in">
-      <div className="page-header flex items-start justify-between">
-        <div>
+      
+     <div className="page-header flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+        {/* Added min-w-0 to prevent the text from forcing the container to grow */}
+        <div className="min-w-0 flex-1 w-full pr-4 pl-16 sm:pl-0">
           <p className="text-slate-500 text-sm font-medium">{greeting},</p>
-          <h1 className="page-title">{profile?.full_name ?? user.email}</h1>
-          <p className="page-subtitle">{profile?.roles?.name === 'admin' ? 'System Administrator' : profile?.roles?.name === 'hod' ? 'HOD / Coordinator' : 'General User'}</p>
+          
+          {/* Added break-all to force long emails to wrap to the next line on small screens */}
+          <h1 className="page-title break-all sm:break-normal">
+            {profile?.full_name ?? user.email}
+          </h1>
+          
+          <p className="page-subtitle">
+            {profile?.roles?.name === 'admin' ? 'System Administrator' : profile?.roles?.name === 'hod' ? 'HOD / Coordinator' : 'General User'}
+          </p>
         </div>
+        
         <Link href="/bookings/new"
-          className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white rounded-xl shadow-sm"
+          className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white rounded-xl shadow-sm w-full sm:w-auto justify-center shrink-0"
           style={{ background: '#0D1A38' }}>
           <CalendarPlus className="w-4 h-4" /> New Booking
         </Link>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {stats.map(s => {
           const Icon = s.icon;
           return (
@@ -73,9 +83,9 @@ export default async function DashboardPage() {
       </div>
 
       {isStaff && pendingAll > 0 && (
-        <div className="mb-6 flex items-center justify-between bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 animate-slide-up">
+        <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 animate-slide-up">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
               <Clock className="w-4 h-4 text-amber-600" />
             </div>
             <div>
@@ -83,7 +93,7 @@ export default async function DashboardPage() {
               <p className="text-xs text-amber-600">Review from the Approvals page</p>
             </div>
           </div>
-          <Link href="/approvals" className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 hover:text-amber-900">
+          <Link href="/approvals" className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 hover:text-amber-900 self-end sm:self-auto">
             Review <ArrowRight className="w-3 h-3" />
           </Link>
         </div>
@@ -107,21 +117,24 @@ export default async function DashboardPage() {
             </Link>
           </div>
         ) : (
-          <table className="data-table">
-            <thead><tr><th>Event</th><th>Venue</th><th>Date & Time</th><th>Status</th></tr></thead>
-            <tbody>
-              {recent.map(ev => (
-                <tr key={ev.id}>
-                  <td className="font-medium text-slate-900">{ev.title}</td>
-                  <td className="text-slate-500">{ev.venues?.[0]?.name ?? '—'}</td>
-                  <td className="text-slate-500 whitespace-nowrap">{formatDateTime(ev.start_time)}</td>
-                  <td><StatusBadge status={ev.status} /></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="overflow-x-auto w-full">
+            <table className="data-table w-full whitespace-nowrap sm:whitespace-normal">
+              <thead><tr><th>Event</th><th>Venue</th><th>Date & Time</th><th>Status</th></tr></thead>
+              <tbody>
+                {recent.map(ev => (
+                  <tr key={ev.id}>
+                    <td className="font-medium text-slate-900">{ev.title}</td>
+                    <td className="text-slate-500">{ev.venues?.[0]?.name ?? '—'}</td>
+                    <td className="text-slate-500 whitespace-nowrap">{formatDateTime(ev.start_time)}</td>
+                    <td><StatusBadge status={ev.status} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
+      
     </div>
   );
 }

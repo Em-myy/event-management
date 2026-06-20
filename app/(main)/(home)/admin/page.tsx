@@ -1,6 +1,24 @@
-import { createClient } from '@/lib/supabase/server';
 import { redirect }     from 'next/navigation';
 import AdminTabs        from '@/components/AdminTabs';
+import { createClient } from '@/utils/supabase/server';
+import { Database } from '@/types/database.types';
+import { InviteRecord } from '@/components/AdminInvitePanel';
+
+type VenueRow = Database['public']['Tables']['venues']['Row'];
+type ResourceRow = Database['public']['Tables']['resources']['Row'];
+
+export type AdminUserWithRole = Database['public']['Tables']['profiles']['Row'] & {
+  roles: {
+    name: string;
+    label: string;
+  } | null;
+};
+
+export type AdminInviteWithInviter = Database['public']['Tables']['invites']['Row'] & {
+  profiles: {
+    username: string | null;
+  } | null;
+};
 
 export const metadata = { title: 'Admin Panel — ESRMS' };
 
@@ -50,6 +68,11 @@ export default async function AdminPage() {
       .order('created_at', { ascending: false }),
   ]);
 
+  const venues = (venuesRes.data ?? []) as VenueRow[];
+  const resources = (resourcesRes.data ?? []) as ResourceRow[];
+  const users = (usersRes.data ?? []) as unknown as AdminUserWithRole[];
+  const invites = (invitesRes.data ?? []) as unknown as AdminInviteWithInviter[];
+
   return (
     <div className="animate-fade-in">
       <div className="page-header">
@@ -60,10 +83,10 @@ export default async function AdminPage() {
       </div>
 
       <AdminTabs
-        initialVenues    = {venuesRes.data    ?? []}
-        initialResources = {resourcesRes.data ?? []}
-        initialUsers     = {usersRes.data     ?? []}
-        initialInvites   = {invitesRes.data   ?? []}
+        initialVenues={venues}
+        initialResources={resources}
+        initialUsers={users}
+        initialInvites={invites as InviteRecord[]}
       />
     </div>
   );

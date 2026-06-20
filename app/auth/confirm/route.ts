@@ -20,7 +20,6 @@ export async function GET(request: NextRequest) {
     });
 
     if (!error) {
-      // This was an admin invite link — apply the pre-assigned role
       if (type === "invite" && data.user) {
         await syncRoleFromInviteMetadata(data.user);
       }

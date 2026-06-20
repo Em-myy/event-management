@@ -1,19 +1,39 @@
 'use client';
 
-import { useState }  from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Mail, UserPlus, Send, RefreshCw, X,
   Clock, CheckCircle2, XCircle, Loader2,
   AlertCircle, ChevronDown, Building, Info,
 } from 'lucide-react';
-import { formatDateTime } from '@/lib/utils';
+import { formatDateTime } from "@/utils/format";
+
+/* ── Types & Interfaces ───────────────────────────────────── */
+export type InviteStatus = 'pending' | 'accepted' | 'cancelled' | 'expired';
+
+export interface InviteRecord {
+  id: string | number;
+  email: string;
+  role_id: number;
+  department?: string | null;
+  created_at: string;
+  status: InviteStatus;
+  accepted_at?: string | null;
+  profiles?: {
+    full_name?: string | null;
+  } | null;
+}
+
+interface AdminInvitePanelProps {
+  initialInvites?: InviteRecord[];
+}
 
 /* ── Role options ─────────────────────────────────────────── */
 const ROLES = [
   {
     value: 1,
-    label: 'Lecturer (General User)',
+    label: 'Lecturer / Student (General User)',
     desc:  'Can view the event calendar, create booking requests, and track their own submissions.',
   },
   {
@@ -24,26 +44,25 @@ const ROLES = [
 ];
 
 /* ── Status badge config ──────────────────────────────────── */
-const STATUS = {
-  pending:   { label: 'Pending',   cls: 'bg-amber-50   text-amber-700   border-amber-200',   Icon: Clock        },
+const STATUS: Record<InviteStatus, { label: string; cls: string; Icon: React.ElementType }> = {
+  pending:   { label: 'Pending',   cls: 'bg-amber-50 text-amber-700 border-amber-200',   Icon: Clock },
   accepted:  { label: 'Accepted',  cls: 'bg-emerald-50 text-emerald-700 border-emerald-200', Icon: CheckCircle2 },
-  cancelled: { label: 'Cancelled', cls: 'bg-slate-100  text-slate-500   border-slate-200',   Icon: XCircle      },
-  expired:   { label: 'Expired',   cls: 'bg-red-50     text-red-600     border-red-200',      Icon: AlertCircle  },
+  cancelled: { label: 'Cancelled', cls: 'bg-slate-100 text-slate-500 border-slate-200',   Icon: XCircle },
+  expired:   { label: 'Expired',   cls: 'bg-red-50 text-red-600 border-red-200',         Icon: AlertCircle },
 };
 
-export default function AdminInvitePanel({ initialInvites = [] }) {
+export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePanelProps) {
   const router = useRouter();
 
   /* ── Form state ─────────────────────────────────────────── */
   const [email,      setEmail]      = useState('');
   const [roleId,     setRoleId]     = useState(1);
-  const [department, setDepartment] = useState('');
   const [roleOpen,   setRoleOpen]   = useState(false);
 
   /* ── UI state ────────────────────────────────────────────── */
-  const [invites,  setInvites]  = useState(initialInvites);
+  const [invites,  setInvites]  = useState<InviteRecord[]>(initialInvites);
   const [sending,  setSending]  = useState(false);
-  const [actionId, setActionId] = useState(null);
+  const [actionId, setActionId] = useState<string | number | null>(null);
   const [success,  setSuccess]  = useState('');
   const [error,    setError]    = useState('');
 
@@ -52,7 +71,7 @@ export default function AdminInvitePanel({ initialInvites = [] }) {
   /* ── Helpers ─────────────────────────────────────────────── */
   function clearFeedback() { setSuccess(''); setError(''); }
 
-  async function callApi(url, body) {
+  async function callApi(url: string, body: any) {
     const res  = await fetch(url, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -64,7 +83,7 @@ export default function AdminInvitePanel({ initialInvites = [] }) {
   }
 
   /* ── Send invite ─────────────────────────────────────────── */
-  async function sendInvite(e) {
+  async function sendInvite(e: React.FormEvent) {
     e.preventDefault();
     clearFeedback();
 
@@ -78,22 +97,20 @@ export default function AdminInvitePanel({ initialInvites = [] }) {
       const data = await callApi('/api/admin/invite', {
         email:      email.trim(),
         role_id:    roleId,
-        department: department.trim() || null,
       });
       setSuccess(data.message);
       setEmail('');
-      setDepartment('');
       setRoleId(1);
       router.refresh();
     } catch (err) {
-      setError(err.message);
+      setError(err instanceof Error ? err.message : 'An unknown error occurred');
     } finally {
       setSending(false);
     }
   }
 
   /* ── Resend invite ───────────────────────────────────────── */
-  async function resend(inviteId) {
+  async function resend(inviteId: string | number) {
     clearFeedback();
     setActionId(inviteId);
     try {
@@ -103,14 +120,14 @@ export default function AdminInvitePanel({ initialInvites = [] }) {
       setSuccess(data.message);
       router.refresh();
     } catch (err) {
-      setError(err.message);
+      setError(err instanceof Error ? err.message : 'Failed to resend invite');
     } finally {
       setActionId(null);
     }
   }
 
   /* ── Cancel invite ───────────────────────────────────────── */
-  async function cancel(inviteId, inviteEmail) {
+  async function cancel(inviteId: string | number, inviteEmail: string) {
     if (!confirm(
       `Cancel the invite for ${inviteEmail}?\n` +
       'They will no longer be able to use the existing link.'
@@ -128,7 +145,7 @@ export default function AdminInvitePanel({ initialInvites = [] }) {
       );
       router.refresh();
     } catch (err) {
-      setError(err.message);
+      setError(err instanceof Error ? err.message : 'Failed to cancel invite');
     } finally {
       setActionId(null);
     }
@@ -187,40 +204,21 @@ export default function AdminInvitePanel({ initialInvites = [] }) {
             </div>
           )}
 
-          {/* Email + Department */}
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-600
-                                uppercase tracking-wide mb-1.5">
+              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
                 Email address *
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={e => { setEmail(e.target.value); clearFeedback(); }}
                   placeholder="staff@institution.edu"
-                  className="field-input pl-9"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-600
-                                uppercase tracking-wide mb-1.5">
-                Department{' '}
-                <span className="text-slate-400 font-normal normal-case">(optional)</span>
-              </label>
-              <div className="relative">
-                <Building className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input
-                  type="text"
-                  value={department}
-                  onChange={e => setDepartment(e.target.value)}
-                  placeholder="e.g. Computer Science"
-                  className="field-input pl-9"
+                  className="field-input !pl-10 py-2 pr-3 w-full border rounded"
                 />
               </div>
             </div>
@@ -334,12 +332,11 @@ export default function AdminInvitePanel({ initialInvites = [] }) {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="data-table">
+            <table className="data-table w-full text-left">
               <thead>
                 <tr>
                   <th>Email</th>
                   <th>Role assigned</th>
-                  <th>Department</th>
                   <th>Invited by</th>
                   <th>Date sent</th>
                   <th>Status</th>
@@ -369,16 +366,11 @@ export default function AdminInvitePanel({ initialInvites = [] }) {
                                       text-xs font-semibold border ${
                             inv.role_id === 2
                               ? 'bg-amber-50 text-amber-700 border-amber-200'
-                              : 'bg-blue-50  text-blue-700  border-blue-200'
+                              : 'bg-blue-50 text-blue-700 border-blue-200'
                           }`}
                         >
                           {roleName}
                         </span>
-                      </td>
-
-                      {/* Department */}
-                      <td className="text-slate-500">
-                        {inv.department || '—'}
                       </td>
 
                       {/* Invited by */}

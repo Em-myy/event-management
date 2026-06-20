@@ -17,11 +17,11 @@ import {
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-type formData = {
+interface FormData {
   username: string;
   email: string;
   password: string;
-};
+}
 
 const MainPage = () => {
   const supabase = createClient();
@@ -31,7 +31,7 @@ const MainPage = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
   const [showPassword, setShowPassword] = useState<boolean>(false);
-  const [form, setForm] = useState<formData>({
+  const [form, setForm] = useState<FormData>({
     username: "",
     email: "",
     password: "",
@@ -48,35 +48,44 @@ const MainPage = () => {
 
     try {
       if (mode === "Sign In") {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { error: signInError } = await supabase.auth.signInWithPassword({
           email: form.email,
           password: form.password,
         });
-        if (error) {
-          setError(error.message);
-          return;
-        }
+        
+        if (signInError) throw signInError;
+
+        router.push("/dashboard");
+        router.refresh();
+        
       } else {
-        const { error } = await supabase.auth.signUp({
+        const { data, error: signUpError } = await supabase.auth.signUp({
           email: form.email,
           password: form.password,
           options: {
             emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
             data: {
               username: form.username,
+              role_id: 1, 
             },
           },
         });
-        if (error) {
-          setError(error.message);
-          return;
+        
+        if (signUpError) throw signUpError;
+
+        if (!data.session) {
+          router.push("/verify-email"); 
+        } else {
+          router.push("/dashboard");
         }
+        
+        router.refresh();
       }
 
-      router.push("/dashboard");
-      router.refresh();
-    } catch (error: any) {
-      setError(error.message ?? "Authentication Failed");
+      
+    } catch (err: any) {
+      console.error("Auth error:", err);
+      setError(err.message ?? "Authentication Failed");
     } finally {
       setLoading(false);
     }
@@ -86,17 +95,16 @@ const MainPage = () => {
     <main className="min-h-screen flex">
       <div className="hidden lg:flex lg:w-[45%] sidebar flex-col justify-between p-16 relative overflow-hidden">
         <div
-          className="absolute inset-0 opacity-0.04"
+          className="absolute inset-0 opacity-[0.04]"
           style={{
-            backgroundImage:
-              "linear-gradient(#fff 1px,transparent 1px) linear-gradient(90deg,#fff 1px,transparent 1px)",
+            backgroundImage: "linear-gradient(#fff 1px,transparent 1px) linear-gradient(90deg,#fff 1px,transparent 1px)",
             backgroundSize: "40px 40px",
           }}
         />
         <div
           className="absolute top-1/3 -left-20 w-96 h-96 rounded-full opacity-10"
           style={{
-            background: "radial-gradient(circle, #F59E0B 0%, transparent-70%",
+            background: "radial-gradient(circle, #F59E0B 0%, transparent 70%)",
           }}
         />
 
@@ -104,13 +112,13 @@ const MainPage = () => {
           <div className="w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center">
             <Calendar className="w-5 h-5 text-white" />
           </div>
-          <span className="font-bold text-white text-xl font-family-display">
+          <span className="font-bold text-white text-xl font-display">
             ESRMS
           </span>
         </div>
 
         <div className="relative z-10 max-w-[70%]">
-          <h1 className="font-family-display text-5xl font-bold text-white leading-tight mb-6">
+          <h1 className="font-display text-5xl font-bold text-white leading-tight mb-6">
             {mode === "Sign In" ? "Manage events " : "Your events, "}
             <span className="text-amber-400">
               {mode === "Sign In" ? "without the chaos" : "perfectly organized"}
@@ -132,14 +140,14 @@ const MainPage = () => {
                   key={s.label}
                   className="bg-white/5 rounded-xl p-6 border border-white/10"
                 >
-                  <div className="font-family-display text-2xl font-bold text-amber-400">
+                  <div className="font-display text-2xl font-bold text-amber-400">
                     {s.text}
                   </div>
                   <div className="text-xs text-slate-400 mt-1">{s.label}</div>
                 </div>
               ))
             ) : (
-              <ul className="flex flex-col gap-5 w-xl">
+              <ul className="flex flex-col gap-5 w-full col-span-3">
                 {[
                   "No double booking, ever",
                   "Real-time availability",
@@ -163,15 +171,14 @@ const MainPage = () => {
         </div>
 
         <div className="relative z-10 text-xs text-slate-600">
-          &copy; {new Date().getFullYear()} ESRMS · Institutional Resource
-          Platform
+          &copy; {new Date().getFullYear()} ESRMS · Institutional Resource Platform
         </div>
       </div>
 
       <div className="flex flex-1 items-center justify-center p-8 text-slate-50">
         <div className="w-full max-w-md animate-fade-in">
           <div className="mb-8">
-            <h2 className="font-family-display text-3xl font-bold text-slate-900">
+            <h2 className="font-display text-3xl font-bold text-slate-900">
               {mode === "Sign In" ? "Welcome Back" : "Create Account"}
             </h2>
             <p className="text-slate-500 mt-2 text-sm">
@@ -185,11 +192,14 @@ const MainPage = () => {
             {["Sign In", "Sign Up"].map((m) => (
               <button
                 key={m}
+                type="button"
                 onClick={() => {
                   setMode(m);
                   setError("");
                 }}
-                className={`flex-1 py-2 text-sm font-semibold rounded-lg cursor-pointer transition-all ${mode === m ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"}`}
+                className={`flex-1 py-2 text-sm font-semibold rounded-lg cursor-pointer transition-all ${
+                  mode === m ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
+                }`}
               >
                 {m === "Sign In" ? "Sign in" : "Sign up"}
               </button>
@@ -203,152 +213,76 @@ const MainPage = () => {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {mode === "Sign Up" ? (
-              <>
-                <Field icon={<User className="w-4 h-4" />} label="Username">
-                  <input
-                    required
-                    value={form.username}
-                    onChange={handleFormChange}
-                    placeholder="Dr. Folarin Balogun"
-                    className="auth-input"
-                    type="text"
-                    name="username"
-                  />
-                </Field>
-                <Field
-                  icon={<Mail className="h-4 w-4" />}
-                  label="Email Address"
-                >
-                  <input
-                    required
-                    value={form.email}
-                    placeholder="folarinbalogun@gmail.com"
-                    className="auth-input"
-                    onChange={handleFormChange}
-                    type="mail"
-                    name="email"
-                  />
-                </Field>
-
-                <Field
-                  icon={<Lock className="w-4 h-4" />}
-                  label="Password"
-                  action={
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((p) => !p)}
-                      className="text-slate-400 hover:text-slate-600 cursor-pointer"
-                    >
-                      {showPassword ? (
-                        <EyeOff className="w-4 h-4" />
-                      ) : (
-                        <Eye className="w-4 h-4" />
-                      )}
-                    </button>
-                  }
-                >
-                  <input
-                    required
-                    type={showPassword ? "text" : "password"}
-                    value={form.password}
-                    onChange={handleFormChange}
-                    placeholder="••••••••"
-                    minLength={6}
-                    className="auth-input"
-                    name="password"
-                  />
-                </Field>
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full mt-4 py-3 px-4 cursor-pointer text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-60 shadow-sm bg-[#0D1A38] hover:bg-[#152754]"
-                >
-                  {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-                  {mode === "Sign Up" ? "Sign up" : "Sign in"}
-                </button>
-
-                <div className="flex items-center my-4">
-                  <div className="grow border-t border-slate-200"></div>
-                  <span className="px-3 text-sm text-slate-400 font-medium">
-                    or
-                  </span>
-                  <div className="grow border-t border-slate-200"></div>
-                </div>
-                <div className="w-full">
-                  {" "}
-                  <GoogleButton />
-                </div>
-              </>
-            ) : (
-              <>
-                {" "}
-                <Field
-                  icon={<Mail className="h-4 w-4" />}
-                  label="Email Address"
-                >
-                  <input
-                    required
-                    value={form.email}
-                    placeholder="folarinbalogun@gmail.com"
-                    className="auth-input"
-                    onChange={handleFormChange}
-                    type="mail"
-                    name="email"
-                  />
-                </Field>
-                <Field
-                  icon={<Lock className="w-4 h-4" />}
-                  label="Password"
-                  action={
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((p) => !p)}
-                      className="text-slate-400 hover:text-slate-600 cursor-pointer"
-                    >
-                      {showPassword ? (
-                        <EyeOff className="w-4 h-4" />
-                      ) : (
-                        <Eye className="w-4 h-4" />
-                      )}
-                    </button>
-                  }
-                >
-                  <input
-                    required
-                    type={showPassword ? "text" : "password"}
-                    value={form.password}
-                    onChange={handleFormChange}
-                    placeholder="••••••••"
-                    minLength={6}
-                    className="auth-input"
-                    name="password"
-                  />
-                </Field>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full mt-4 py-3 px-4 cursor-pointer text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-60 shadow-sm bg-[#0D1A38] hover:bg-[#152754]"
-                >
-                  {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-                  {mode === "Sign Up" ? "Sign up" : "Sign in"}
-                </button>
-                <div className="flex items-center my-4">
-                  <div className="grow border-t border-slate-200"></div>
-                  <span className="px-3 text-sm text-slate-400 font-medium">
-                    or
-                  </span>
-                  <div className="grow border-t border-slate-200"></div>
-                </div>
-                <div className="w-full">
-                  {" "}
-                  <GoogleButton />
-                </div>
-              </>
+          <form onSubmit={handleSubmit} method="POST" className="space-y-4">
+            {mode === "Sign Up" && (
+              <Field icon={<User className="w-4 h-4" />} label="Username">
+                <input
+                  required
+                  value={form.username}
+                  onChange={handleFormChange}
+                  placeholder="Dr. Folarin Balogun"
+                  className="auth-input w-full p-2 border rounded bg-transparent text-slate-900"
+                  type="text"
+                  name="username"
+                />
+              </Field>
             )}
+
+            <Field icon={<Mail className="h-4 w-4" />} label="Email Address">
+              <input
+                required
+                value={form.email}
+                placeholder="folarinbalogun@gmail.com"
+                className="auth-input w-full p-2 border rounded bg-transparent text-slate-900"
+                onChange={handleFormChange}
+                type="email"
+                name="email"
+              />
+            </Field>
+
+            <Field
+              icon={<Lock className="w-4 h-4" />}
+              label="Password"
+              action={
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((p) => !p)}
+                  className="text-slate-400 hover:text-slate-600 cursor-pointer"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              }
+            >
+              <input
+                required
+                type={showPassword ? "text" : "password"}
+                value={form.password}
+                onChange={handleFormChange}
+                placeholder="••••••••"
+                minLength={6}
+                className="auth-input w-full p-2 border rounded bg-transparent text-slate-900"
+                name="password"
+              />
+            </Field>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full mt-4 py-3 px-4 cursor-pointer text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-60 shadow-sm bg-[#0D1A38] hover:bg-[#152754]"
+            >
+              {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+              {mode === "Sign Up" ? "Sign up" : "Sign in"}
+            </button>
           </form>
+           <div className="flex items-center my-4">
+              <div className="grow border-t border-slate-200"></div>
+              <span className="px-3 text-sm text-slate-400 font-medium">or</span>
+              <div className="grow border-t border-slate-200"></div>
+            </div>
+            
+            <div className="w-full">
+              <GoogleButton />
+            </div>
         </div>
       </div>
     </main>

@@ -18,8 +18,7 @@ export async function syncRoleFromInviteMetadata(user: User) {
       await admin
         .from("profiles")
         .update({
-          role_id: metaRoleId,
-          department: user.user_metadata?.department ?? null,
+          role_id: metaRoleId
         })
         .eq("id", user.id);
     }

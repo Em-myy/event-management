@@ -9,45 +9,29 @@ const AuthContext = createContext<any>(null);
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [avatarUrl, setAvatarUrl] = useState<string | null>("");
-  const [initial, setInitial] = useState<string>("?");
-  const [displayName, setDisplayName] = useState<string>("");
 
   const supabase = createClient();
   const router = useRouter();
 
   useEffect(() => {
     const getUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
+      const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
       setLoading(false);
-
-      const image =
-        user?.user_metadata.avatar_url || user?.user_metadata.picture;
-
-      setAvatarUrl(image || null);
-
-      const displayName =
-        user?.user_metadata.display_name ||
-        user?.user_metadata.full_name ||
-        user?.user_metadata.username ||
-        user?.email ||
-        "?";
-
-      setDisplayName(displayName);
-      setInitial(displayName.charAt(0).toUpperCase());
     };
 
     getUser();
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(session?.user ?? null);
+        setLoading(false);
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleSignout = async () => {
@@ -59,9 +43,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     router.refresh();
   };
 
+  // 💡 DERIVED STATE: Calculate these dynamically based on the current user.
+  // If the user changes (e.g. they log in), these instantly update!
+  const avatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture || null;
+  
+  const displayName = 
+    user?.user_metadata?.display_name || 
+    user?.user_metadata?.full_name || 
+    user?.user_metadata?.username || 
+    user?.email || 
+    "Unknown User";
+
+  const initials = displayName !== "Unknown User" ? displayName.charAt(0).toUpperCase() : "?";
+
   return (
     <AuthContext.Provider
-      value={{ user, avatarUrl, initial, displayName, loading, handleSignout }}
+      value={{ 
+        user, 
+        avatarUrl, 
+        initials, // Exported as plural 'initials' to match Sidebar
+        displayName, 
+        loading, 
+        handleSignout 
+      }}
     >
       {children}
     </AuthContext.Provider>

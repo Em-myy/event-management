@@ -2,10 +2,14 @@
 
 import { useState }     from 'react';
 import { useRouter }    from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
 import { Trash2, Loader2 } from 'lucide-react';
+import { createClient } from '@/utils/supabase/client';
 
-export default function BookingActions({ bookingId }) {
+interface ApprovalButtonsProps {
+  bookingId: string;
+}
+
+export default function BookingActions({ bookingId }: ApprovalButtonsProps) {
   const [loading, setLoading] = useState(false);
   const router   = useRouter();
 
