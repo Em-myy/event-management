@@ -47,7 +47,7 @@ export default async function DashboardPage() {
       
      <div className="page-header flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         {/* Added min-w-0 to prevent the text from forcing the container to grow */}
-        <div className="min-w-0 flex-1 w-full pr-4 pl-16 sm:pl-0">
+        <div className="min-w-0 flex-1 w-full pr-4">
           <p className="text-slate-500 text-sm font-medium">{greeting},</p>
           
           {/* Added break-all to force long emails to wrap to the next line on small screens */}

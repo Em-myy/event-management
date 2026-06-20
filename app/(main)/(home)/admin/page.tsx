@@ -1,5 +1,5 @@
-import { redirect }     from 'next/navigation';
-import AdminTabs        from '@/components/AdminTabs';
+import { redirect } from 'next/navigation';
+import AdminTabs from '@/components/AdminTabs';
 import { createClient } from '@/utils/supabase/server';
 import { Database } from '@/types/database.types';
 import { InviteRecord } from '@/components/AdminInvitePanel';
@@ -75,13 +75,15 @@ export default async function AdminPage() {
 
   return (
     <div className="animate-fade-in">
-      <div className="page-header">
+      {/* Added responsive bottom margin to match the rest of the app */}
+      <div className="page-header mb-6 sm:mb-8">
         <h1 className="page-title">Admin Panel</h1>
         <p className="page-subtitle">
           Manage venues, resources, user roles, and staff invites
         </p>
       </div>
 
+      {/* The actual responsive heavy lifting will be inside AdminTabs */}
       <AdminTabs
         initialVenues={venues}
         initialResources={resources}

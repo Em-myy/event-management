@@ -25,7 +25,10 @@ export default async function AppLayout({
     <div className="flex h-screen overflow-hidden bg-slate-100">
       <Sidebar profile={profile} />
       <main className="flex-1 overflow-y-auto">
-        <div className="max-w-7xl mx-auto px-6 py-8">{children}</div>
+        {/* Changed py-8 to pt-20 lg:pt-8 pb-8 */}
+        <div className="max-w-7xl mx-auto px-6 pt-20 lg:pt-8 pb-8">
+          {children}
+        </div>
       </main>
     </div>
   );
