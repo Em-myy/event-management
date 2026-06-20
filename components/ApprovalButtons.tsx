@@ -79,32 +79,34 @@ export default function ApprovalButtons({ bookingId }: ApprovalButtonsProps) {
   /* ── Render ─────────────────────────────────────────────── */
   return (
     <>
-      <div className="flex flex-col gap-2 shrink-0">
+      {/* 1. Changed to a responsive grid: side-by-side on mobile, stacked on desktop */}
+      <div className="grid grid-cols-2 sm:grid-cols-1 gap-2 shrink-0 w-full">
         <button 
           onClick={approve} 
           disabled={loading}
-          className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl transition-all disabled:opacity-50"
+          className="w-full flex items-center justify-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl transition-all disabled:opacity-50"
         >
-          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4 shrink-0" />}
           Approve
         </button>
         
         <button 
           onClick={() => setShowModal(true)} 
           disabled={loading}
-          className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-red-50 hover:bg-red-100 text-red-600 text-sm font-semibold rounded-xl border border-red-200 transition-all"
+          className="w-full flex items-center justify-center gap-1.5 px-3.5 py-2 bg-red-50 hover:bg-red-100 text-red-600 text-sm font-semibold rounded-xl border border-red-200 transition-all"
         >
-          <X className="w-4 h-4" /> 
+          <X className="w-4 h-4 shrink-0" /> 
           Reject
         </button>
       </div>
 
       {showModal && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 sm:p-6"
           onClick={e => e.target === e.currentTarget && setShowModal(false)}
         >
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 animate-slide-up">
+          {/* 2. Added max-h-full and overflow-y-auto so the modal doesn't break off-screen on tiny phones */}
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 animate-slide-up max-h-full overflow-y-auto">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center shrink-0">
                 <AlertCircle className="w-5 h-5 text-red-500" />
@@ -123,7 +125,8 @@ export default function ApprovalButtons({ bookingId }: ApprovalButtonsProps) {
               className="field-input resize-none w-full mb-4 p-3 border rounded-xl bg-slate-50 text-sm" 
             />
             
-            <div className="flex gap-3">
+            {/* 3. Changed to flex-col-reverse on mobile so the primary "Confirm" action is closest to the thumbs */}
+            <div className="flex flex-col-reverse sm:flex-row gap-3">
               <button 
                 onClick={() => { setShowModal(false); setReason(''); }}
                 className="flex-1 py-2.5 text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
@@ -135,7 +138,7 @@ export default function ApprovalButtons({ bookingId }: ApprovalButtonsProps) {
                 disabled={!reason.trim() || loading}
                 className="flex-1 py-2.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
               >
-                {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+                {loading && <Loader2 className="w-4 h-4 animate-spin shrink-0" />}
                 Confirm Rejection
               </button>
             </div>
