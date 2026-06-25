@@ -5,10 +5,10 @@ import Link from "next/link";
 import { CalendarDays, CalendarPlus } from "lucide-react";
 import { formatDateTime } from "@/utils/format";
 import { StatusBadge } from "@/utils/status-badge";
-import BookingActions from "@/components/BookingActions";
 import { useTableChangeRefresh } from "@/hooks/useTableChangeRefresh";
 import LiveUpdatePill from "@/components/LiveUpdatePill";
 import type { MyBooking } from "@/utils/queries";
+import BookingActions from "./BookingActions";
 
 interface Props {
   userId: string;

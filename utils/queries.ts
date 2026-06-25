@@ -125,3 +125,29 @@ export function buildStatsQuery(
 }
 
 export type ProfileData = QueryData<ReturnType<typeof buildProfileQuery>>;
+
+
+export function buildEditQuery(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  bookingId: string,
+  userId: string
+) {
+  return supabase
+    .from("events")
+    .select(
+      `
+      id, title, description, status, start_time, end_time, venue_id,
+      venues ( id, name, location, capacity, description ),
+      event_resources (
+        quantity_requested,
+        resource_id,
+        resources ( id, name, description, condition, total_quantity )
+      )
+    `
+    )
+    .eq("id", bookingId)
+    .eq("user_id", userId) /* security — users can only edit own bookings */
+    .single();
+}
+
+export type EditableBooking = QueryData<ReturnType<typeof buildEditQuery>>;
