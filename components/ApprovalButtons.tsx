@@ -1,11 +1,10 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Check, X, Loader2, AlertCircle } from 'lucide-react';
-import { createClient } from '@/utils/supabase/client';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/utils/supabase/client";
+import { Check, X, Loader2, AlertCircle } from "lucide-react";
 
-/* ── Interfaces ───────────────────────────────────────────── */
 interface ApprovalButtonsProps {
   bookingId: string;
 }
@@ -13,132 +12,155 @@ interface ApprovalButtonsProps {
 export default function ApprovalButtons({ bookingId }: ApprovalButtonsProps) {
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [reason, setReason] = useState('');
-  
+  const [reason, setReason] = useState("");
+  const [error, setError] = useState("");
   const router = useRouter();
-  const supabase = createClient(); 
+  const supabase = createClient();
 
-  /* ── Approve Handler ────────────────────────────────────── */
   async function approve() {
-    if (!confirm('Approve this booking?')) return;
-    
+    if (!confirm("Approve this booking?")) return;
     setLoading(true);
+    setError("");
     try {
-      // 1. Get the current authenticated user safely
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError || !user) throw new Error('User not authenticated');
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated.");
 
-      // 2. Update the booking
-      const { error } = await supabase
-        .from('events')
+      const { error: updateErr } = await supabase
+        .from("events")
         .update({
-          status: 'approved', 
-          approved_by: user.id, 
+          status: "approved",
+          approved_by: user.id,
           approved_at: new Date().toISOString(),
         })
-        .eq('id', bookingId);
+        .eq("id", bookingId);
 
-      if (error) throw error;
-      
+      if (updateErr) throw updateErr;
       router.refresh();
     } catch (err) {
-      console.error('Error approving booking:', err);
-      alert('Failed to approve booking. Please try again.');
+      setError(
+        err instanceof Error ? err.message : "Failed to approve booking."
+      );
     } finally {
       setLoading(false);
     }
   }
 
-  /* ── Reject Handler ─────────────────────────────────────── */
   async function reject() {
     if (!reason.trim()) return;
-    
     setLoading(true);
+    setError("");
     try {
-      const { error } = await supabase
-        .from('events')
-        .update({ 
-          status: 'rejected', 
-          rejection_reason: reason.trim() 
+      const { error: updateErr } = await supabase
+        .from("events")
+        .update({
+          status: "rejected",
+          rejection_reason: reason.trim(),
         })
-        .eq('id', bookingId);
+        .eq("id", bookingId);
 
-      if (error) throw error;
-
+      if (updateErr) throw updateErr;
       setShowModal(false);
-      setReason('');
+      setReason("");
       router.refresh();
     } catch (err) {
-      console.error('Error rejecting booking:', err);
-      alert('Failed to reject booking. Please try again.');
+      setError(
+        err instanceof Error ? err.message : "Failed to reject booking."
+      );
     } finally {
       setLoading(false);
     }
   }
 
-  /* ── Render ─────────────────────────────────────────────── */
   return (
     <>
-      {/* 1. Changed to a responsive grid: side-by-side on mobile, stacked on desktop */}
-      <div className="grid grid-cols-2 sm:grid-cols-1 gap-2 shrink-0 w-full">
-        <button 
-          onClick={approve} 
+      <div className="flex flex-col gap-2 shrink-0">
+        {error && (
+          <div className="flex items-start gap-1.5 text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-2.5 py-1.5 max-w-[180px]">
+            <AlertCircle className="w-3 h-3 shrink-0 mt-0.5" />
+            <span>{error}</span>
+          </div>
+        )}
+        <button
+          onClick={approve}
           disabled={loading}
-          className="w-full flex items-center justify-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl transition-all disabled:opacity-50"
+          className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl transition-all disabled:opacity-50"
         >
-          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4 shrink-0" />}
+          {loading ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Check className="w-4 h-4" />
+          )}
           Approve
         </button>
-        
-        <button 
-          onClick={() => setShowModal(true)} 
+        <button
+          onClick={() => {
+            setShowModal(true);
+            setError("");
+          }}
           disabled={loading}
-          className="w-full flex items-center justify-center gap-1.5 px-3.5 py-2 bg-red-50 hover:bg-red-100 text-red-600 text-sm font-semibold rounded-xl border border-red-200 transition-all"
+          className="flex items-center gap-1.5 px-3.5 py-2 bg-red-50 hover:bg-red-100 text-red-600 text-sm font-semibold rounded-xl border border-red-200 transition-all"
         >
-          <X className="w-4 h-4 shrink-0" /> 
+          <X className="w-4 h-4" />
           Reject
         </button>
       </div>
 
       {showModal && (
-        <div 
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 sm:p-6"
-          onClick={e => e.target === e.currentTarget && setShowModal(false)}
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={(e) =>
+            e.target === e.currentTarget && setShowModal(false)
+          }
         >
-          {/* 2. Added max-h-full and overflow-y-auto so the modal doesn't break off-screen on tiny phones */}
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 animate-slide-up max-h-full overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 animate-slide-up">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center">
                 <AlertCircle className="w-5 h-5 text-red-500" />
               </div>
               <div>
-                <h3 className="font-display font-bold text-slate-900">Reject Booking</h3>
-                <p className="text-xs text-slate-500">Provide a reason for the requester</p>
+                <h3 className="font-display font-bold text-slate-900">
+                  Reject Booking
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Provide a reason for the requester
+                </p>
               </div>
             </div>
-            
-            <textarea 
-              value={reason} 
-              onChange={e => setReason(e.target.value)}
+
+            {error && (
+              <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 rounded-lg px-3 py-2 text-sm mb-4">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                {error}
+              </div>
+            )}
+
+            <textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
               placeholder="e.g. Venue unavailable due to maintenance, please choose another date..."
-              rows={3} 
-              className="field-input resize-none w-full mb-4 p-3 border rounded-xl bg-slate-50 text-sm" 
+              rows={3}
+              className="field-input resize-none w-full mb-4"
             />
-            
-            {/* 3. Changed to flex-col-reverse on mobile so the primary "Confirm" action is closest to the thumbs */}
-            <div className="flex flex-col-reverse sm:flex-row gap-3">
-              <button 
-                onClick={() => { setShowModal(false); setReason(''); }}
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowModal(false);
+                  setReason("");
+                  setError("");
+                }}
                 className="flex-1 py-2.5 text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
               >
                 Cancel
               </button>
-              <button 
-                onClick={reject} 
+              <button
+                onClick={reject}
                 disabled={!reason.trim() || loading}
-                className="flex-1 py-2.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
+                className="flex-1 py-2.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                {loading && <Loader2 className="w-4 h-4 animate-spin shrink-0" />}
+                {loading && <Loader2 className="w-4 h-4 animate-spin" />}
                 Confirm Rejection
               </button>
             </div>

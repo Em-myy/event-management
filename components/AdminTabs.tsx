@@ -1,43 +1,55 @@
 'use client';
 
 import { useState } from 'react';
-import AdminInvitePanel, { InviteRecord } from '@/components/AdminInvitePanel';
+import AdminInvitePanel from '@/components/AdminInvitePanel';
 import {
   Plus, Pencil, Trash2, Save, X,
   Loader2, Building2, Package, Users, MailPlus,
+  CalendarDays,
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { Database } from '@/types/database.types';
+import type { 
+  AdminVenue, 
+  AdminResource, 
+  AdminUser, 
+  AdminInvite, 
+  AdminBooking 
+} from "@/utils/queries";
 
 type Venue = Database['public']['Tables']['venues']['Row'];
 type Resource = Database['public']['Tables']['resources']['Row'];
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
 /* ── Tab definitions ────────────────────────────────────────── */
-const TABS = [
-  { id: 'venues',    label: 'Venues',    icon: Building2 },
-  { id: 'resources', label: 'Resources', icon: Package   },
-  { id: 'users',     label: 'Users',     icon: Users     },
-  { id: 'invites',   label: 'Invites',   icon: MailPlus  },
-] as const;
+type TabId = "venues" | "resources" | "users" | "invites" | "bookings";
 
-type TabId = typeof TABS[number]['id'];
+const TABS: { id: TabId; label: string; icon: typeof Building2 }[] = [
+  { id: "venues",    label: "Venues",       icon: Building2  },
+  { id: "resources", label: "Resources",    icon: Package    },
+  { id: "users",     label: "Users",        icon: Users      },
+  { id: "invites",   label: "Invites",      icon: MailPlus   },
+  { id: "bookings",  label: "All Bookings", icon: CalendarDays },
+];
+
 
 /* ── Root component ─────────────────────────────────────────── */
 interface AdminTabsProps {
-  initialVenues?: Venue[];
-  initialResources?: Resource[];
-  initialUsers?: Profile[];
-  initialInvites?: InviteRecord[]; 
+  initialVenues: AdminVenue[];
+  initialResources: AdminResource[];
+  initialUsers: AdminUser[];
+  initialInvites: AdminInvite[];
+  initialBookings: AdminBooking[];
 }
 
 export default function AdminTabs({
-  initialVenues = [],
-  initialResources = [],
-  initialUsers = [],
-  initialInvites = [],
+  initialVenues,
+  initialResources,
+  initialUsers,
+  initialInvites,
+  initialBookings,
 }: AdminTabsProps) {
-  const [tab, setTab] = useState<TabId>('venues');
+  const [tab, setTab] = useState("venues");
 
   return (
     <div>

@@ -35,16 +35,54 @@ export const createClient = async (request: NextRequest) => {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const protectedRoutes = ["/dashboard", "/bookings", "/bookings/new", "/approvals", "/admin"];
+  const { pathname } = request.nextUrl;
 
-  const isProtectedRoute = protectedRoutes.some((route) =>
-    request.nextUrl.pathname.startsWith(route),
-  );
+  const isPublicPath =
+    pathname === "/" ||
+    pathname === "/auth/callback" ||
+    pathname === "/auth/confirm" ||
+    pathname === "/auth/auth-code-error";
 
-  if (!user && isProtectedRoute) {
+  /* ── Unauthenticated user trying to access a protected route ── */
+  if (!user && !isPublicPath) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
     return NextResponse.redirect(url);
+  }
+
+  if (user && pathname === "/") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/dashboard";
+    return NextResponse.redirect(url);
+  }
+
+  /* ── Role-guard the admin routes ──────────────────────────── */
+  if (user && pathname.startsWith("/admin")) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role_id")
+      .eq("id", user.id)
+      .single();
+
+       if (!profile || profile.role_id < 3) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/dashboard";
+      return NextResponse.redirect(url);
+    }
+  }
+
+   if (user && pathname.startsWith("/approvals")) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role_id")
+      .eq("id", user.id)
+      .single();
+
+    if (!profile || profile.role_id < 2) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/dashboard";
+      return NextResponse.redirect(url);
+    }
   }
 
   return supabaseResponse;

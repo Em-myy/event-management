@@ -8,25 +8,15 @@ import {
   AlertCircle, ChevronDown, Building, Info,
 } from 'lucide-react';
 import { formatDateTime } from "@/utils/format";
+import type { AdminInvite } from "@/utils/queries";
 
 /* ── Types & Interfaces ───────────────────────────────────── */
 export type InviteStatus = 'pending' | 'accepted' | 'cancelled' | 'expired';
 
-export interface InviteRecord {
-  id: string | number;
-  email: string;
-  role_id: number;
-  department?: string | null;
-  created_at: string;
-  status: InviteStatus;
-  accepted_at?: string | null;
-  profiles?: {
-    full_name?: string | null;
-  } | null;
-}
+
 
 interface AdminInvitePanelProps {
-  initialInvites?: InviteRecord[];
+  initialInvites?: AdminInvite[]
 }
 
 /* ── Role options ─────────────────────────────────────────── */
@@ -60,7 +50,7 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
   const [roleOpen,   setRoleOpen]   = useState(false);
 
   /* ── UI state ────────────────────────────────────────────── */
-  const [invites,  setInvites]  = useState<InviteRecord[]>(initialInvites);
+  const [invites,  setInvites]  = useState<AdminInvite[]>(initialInvites);
   const [sending,  setSending]  = useState(false);
   const [actionId, setActionId] = useState<string | number | null>(null);
   const [success,  setSuccess]  = useState('');
@@ -332,12 +322,17 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
               </thead>
               <tbody>
                 {invites.map(inv => {
-                  const cfg         = STATUS[inv.status] ?? STATUS.pending;
+                  // 1. FIX THE STATUS ERROR: Tell TypeScript it's a valid InviteStatus
+                  const cfg = STATUS[inv.status as InviteStatus] ?? STATUS.pending;
+                  
+                  // 2. FIX THE ARRAY ERROR: Normalize the profiles object
+                  const inviter = Array.isArray(inv.profiles) ? inv.profiles[0] : inv.profiles;
+                  
                   const { Icon }    = cfg;
                   const isActioning = actionId === inv.id;
                   const roleName    = inv.role_id === 2
                     ? 'HOD / Coordinator'
-                    : 'Lecturer';
+                    : 'Lecturer / Student';
 
                   return (
                     <tr key={inv.id}>
@@ -359,9 +354,9 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
                         </span>
                       </td>
 
-                      {/* Invited by */}
+                      {/* Invited by (NOW FIXED AND ERROR-FREE) */}
                       <td className="text-slate-500">
-                        {inv.profiles?.full_name ?? 'Admin'}
+                        {inviter?.username ?? 'Admin'}
                       </td>
 
                       {/* Date sent */}
