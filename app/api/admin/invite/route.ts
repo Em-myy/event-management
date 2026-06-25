@@ -1,40 +1,56 @@
-import { NextResponse }      from 'next/server';
-import { createAdminClient } from '@/lib/supabase/admin';
-import { createClient }      from '@/lib/supabase/server';
+import { createAdminClient } from '@/utils/supabase/admin';
+import { createClient } from '@/utils/supabase/server';
+import { NextResponse, NextRequest } from 'next/server';
 
-export async function POST(request) {
+// 1. Define the expected shape of your request body
+interface SendInviteBody {
+  email: string;
+  role_id: string | number;
+  department?: string;
+}
+
+// 2. Type the request parameter using NextRequest
+export async function POST(request: NextRequest) {
   try {
     // 1. Verify caller is a logged-in admin
     const supabase = await createClient();
     const { data: { user }, error: authErr } = await supabase.auth.getUser();
 
-    if (authErr || !user)
+    if (authErr || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     const { data: profile } = await supabase
-      .from('profiles').select('role_id').eq('id', user.id).single();
+      .from('profiles')
+      .select('role_id')
+      .eq('id', user.id)
+      .single();
 
-    if (!profile || profile.role_id < 3)
+    if (!profile || profile.role_id < 3) {
       return NextResponse.json(
         { error: 'Forbidden: only Administrators can send invites' },
         { status: 403 }
       );
+    }
 
-    // 2. Validate body
-    const { email, role_id, department } = await request.json();
+    // 2. Validate body using our TypeScript interface
+    const body = (await request.json()) as Partial<SendInviteBody>;
+    const { email, role_id, department } = body;
 
-    if (!email || !role_id)
+    if (!email || !role_id) {
       return NextResponse.json(
         { error: 'email and role_id are required' },
         { status: 400 }
       );
+    }
 
     const parsedRoleId = Number(role_id);
-    if (![1, 2].includes(parsedRoleId))
+    if (![1, 2].includes(parsedRoleId)) {
       return NextResponse.json(
         { error: 'role_id must be 1 (Lecturer) or 2 (HOD)' },
         { status: 400 }
       );
+    }
 
     const adminClient = createAdminClient();
 
@@ -46,11 +62,12 @@ export async function POST(request) {
       .eq('status', 'pending')
       .maybeSingle();
 
-    if (existing)
+    if (existing) {
       return NextResponse.json(
         { error: 'A pending invite already exists for this email.' },
         { status: 409 }
       );
+    }
 
     // 4. Send invite via Supabase Auth Admin API
     const { error: inviteErr } =
@@ -63,11 +80,12 @@ export async function POST(request) {
       );
 
     if (inviteErr) {
-      if (inviteErr.message?.includes('already been registered'))
+      if (inviteErr.message?.includes('already been registered')) {
         return NextResponse.json(
           { error: 'This email already has an ESRMS account.' },
           { status: 409 }
         );
+      }
       throw inviteErr;
     }
 
@@ -78,13 +96,18 @@ export async function POST(request) {
       invited_by: user.id,
       status:     'pending',
     });
+    
     if (dbErr) throw dbErr;
 
     return NextResponse.json({ message: `Invite sent to ${email}` });
   } catch (err) {
     console.error('[POST /api/admin/invite]', err);
+    
+    // 3. Safely handle TypeScript's strict 'unknown' error type
+    const errorMessage = err instanceof Error ? err.message : 'Something went wrong.';
+    
     return NextResponse.json(
-      { error: err.message ?? 'Something went wrong.' },
+      { error: errorMessage },
       { status: 500 }
     );
   }

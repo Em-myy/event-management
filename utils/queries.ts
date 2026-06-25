@@ -102,3 +102,26 @@ export type AdminResource = QueryData<AdminQueries["resources"]>[number];
 export type AdminUser     = QueryData<AdminQueries["users"]>[number];
 export type AdminInvite   = QueryData<AdminQueries["invites"]>[number];
 export type AdminBooking  = QueryData<AdminQueries["bookings"]>[number];
+
+export function buildProfileQuery(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string
+) {
+  return supabase
+    .from("profiles")
+    .select("*, roles ( name, label )")
+    .eq("id", userId)
+    .single();
+}
+
+export function buildStatsQuery(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string
+) {
+  return supabase
+    .from("events")
+    .select("status")
+    .eq("user_id", userId);
+}
+
+export type ProfileData = QueryData<ReturnType<typeof buildProfileQuery>>;

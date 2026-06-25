@@ -17,6 +17,7 @@ import {
   ChevronRight,
   Menu,
   X,
+  UserCircle,
 } from "lucide-react";
 
 /* ── Interfaces ───────────────────────────────────────────── */
@@ -45,6 +46,7 @@ const NAV: NavItem[] = [
   { href: "/bookings/new", label: "New Booking", icon: CalendarPlus, minRole: 1 },
   { href: "/approvals", label: "Approvals", icon: CheckSquare, minRole: 2, showBadge: true },
   { href: "/admin", label: "Admin Panel", icon: Settings, minRole: 3 },
+  { href: "/profile",      label: "My Profile",  icon: UserCircle,     minRole: 1 },
 ];
 
 const ROLE_LABELS: Record<number, string> = {
