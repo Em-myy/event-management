@@ -25,7 +25,7 @@ export default function AuthLayout({
 }>) {
   return (
     <html lang="en" className={`${dmSans.variable} ${syne.variable}`}>
-      <body className="font-sans antialiased bg-slate-50 text-slate-900">
+      <body className="font-sans antialiased bg-slate-50 text-slate-900 min-h-screen w-full overflow-x-hidden">
         {children}
       </body>
     </html>
