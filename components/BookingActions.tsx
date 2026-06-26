@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/utils/supabase/client";
-import { Trash2, Loader2, Pencil, AlertTriangle, X } from "lucide-react";
 import Link from "next/link";
+import { createClient } from "@/utils/supabase/client";
+import { Trash2, Loader2, Pencil, AlertTriangle } from "lucide-react";
 
 interface BookingActionsProps {
   bookingId: string;
@@ -13,7 +14,13 @@ interface BookingActionsProps {
 export default function BookingActions({ bookingId }: BookingActionsProps) {
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
+
+  // Ensure the portal only renders on the client side to prevent Next.js hydration errors
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   async function handleDelete() {
     setLoading(true);
@@ -29,6 +36,40 @@ export default function BookingActions({ bookingId }: BookingActionsProps) {
     setShowModal(false);
     router.refresh();
   }
+
+  // The modal UI extracted into a variable
+  const modalContent = (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in">
+      <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-slide-up">
+        <div className="flex items-center gap-3 text-red-600 mb-4">
+          <div className="p-2 bg-red-50 rounded-full">
+            <AlertTriangle className="w-6 h-6" />
+          </div>
+          <h3 className="text-lg font-bold">Cancel Booking?</h3>
+        </div>
+        
+        <p className="text-sm text-slate-500 mb-6">
+          Are you sure you want to cancel this request? This action cannot be undone and the slot will be freed up for others.
+        </p>
+
+        <div className="flex gap-3">
+          <button
+            onClick={() => setShowModal(false)}
+            className="flex-1 cursor-pointer px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+          >
+            Keep it
+          </button>
+          <button
+            onClick={handleDelete}
+            disabled={loading}
+            className="flex-1 flex cursor-pointer items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-all disabled:opacity-50"
+          >
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Yes, Cancel"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <>
@@ -52,39 +93,8 @@ export default function BookingActions({ bookingId }: BookingActionsProps) {
         </button>
       </div>
 
-      {/* Custom Confirmation Modal */}
-      {showModal && (
-        <div className="fixed h-screen w-full inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-slide-up">
-            <div className="flex items-center gap-3 text-red-600 mb-4">
-              <div className="p-2 bg-red-50 rounded-full">
-                <AlertTriangle className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-bold">Cancel Booking?</h3>
-            </div>
-            
-            <p className="text-sm text-slate-500 mb-6">
-              Are you sure you want to cancel this request? This action cannot be undone and the slot will be freed up for others.
-            </p>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowModal(false)}
-                className="flex-1 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
-              >
-                Keep it
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={loading}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-all disabled:opacity-50 cursor-pointer"
-              >
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Yes, Cancel"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Teleport the modal to the body so it overlaps EVERYTHING */}
+      {showModal && mounted && createPortal(modalContent, document.body)}
     </>
   );
 }
