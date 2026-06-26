@@ -42,10 +42,12 @@ export default async function AppLayout({
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-100">
+    <div className="flex flex-col md:flex-row h-screen overflow-hidden bg-slate-100">
       <Sidebar profile={profile} initialPendingCount={initialPendingCount} />
-      <main className="flex-1 overflow-y-auto">
-        <div className="max-w-7xl mx-auto px-6 py-8">{children}</div>
+      <main className="flex-1 w-full overflow-y-auto">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-4 sm:py-8">
+          {children}
+        </div>
       </main>
     </div>
   );

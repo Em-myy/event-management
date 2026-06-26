@@ -1,4 +1,3 @@
-// File: src/app/(main)/(home)/approvals/page.tsx
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import ApprovalsRealtimeList from "@/components/ApprovalsRealtimeList";
@@ -24,10 +23,12 @@ export default async function ApprovalsPage() {
   const { data: pending } = await buildPendingQuery(supabase);
 
   return (
-    <div className="animate-fade-in">
-      <div className="page-header">
-        <h1 className="page-title">Pending Approvals</h1>
-        <p className="page-subtitle">
+    <div className="animate-fade-in w-full">
+      <div className="page-header mb-6 sm:mb-8 flex flex-col gap-1 sm:gap-2">
+        <h1 className="page-title text-2xl sm:text-3xl md:text-4xl break-words">
+          Pending Approvals
+        </h1>
+        <p className="page-subtitle text-sm sm:text-base break-words">
           Review and action booking requests awaiting your decision
         </p>
       </div>

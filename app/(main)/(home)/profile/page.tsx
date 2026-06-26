@@ -1,9 +1,6 @@
-// File: src/app/(app)/profile/page.tsx
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import ProfileClient from "@/components/ProfileClient";
-
-// ✅ Import your builders from the central queries file
 import { buildProfileQuery, buildStatsQuery } from "@/utils/queries";
 
 export const metadata = { title: "My Profile — ESRMS" };
@@ -33,10 +30,12 @@ export default async function ProfilePage() {
   };
 
   return (
-    <div className="animate-fade-in">
-      <div className="page-header">
-        <h1 className="page-title">My Profile</h1>
-        <p className="page-subtitle">
+    <div className="animate-fade-in w-full">
+      <div className="page-header mb-6 sm:mb-8 flex flex-col gap-1 sm:gap-2">
+        <h1 className="page-title text-2xl sm:text-3xl md:text-4xl break-words">
+          My Profile
+        </h1>
+        <p className="page-subtitle text-sm sm:text-base break-words">
           Manage your personal information and account settings
         </p>
       </div>

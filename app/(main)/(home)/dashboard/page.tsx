@@ -1,4 +1,3 @@
-// File: src/app/(app)/dashboard/page.tsx
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { CalendarPlus } from "lucide-react";
@@ -58,16 +57,16 @@ export default async function DashboardPage() {
       : "General User";
 
   return (
-    <div className="animate-fade-in">
-      <div className="page-header flex items-start justify-between">
-        <div>
+    <div className="animate-fade-in w-full">
+      <div className="page-header flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0 mb-6 sm:mb-8">
+        <div className="w-full sm:w-auto break-words">
           <p className="text-slate-500 text-sm font-medium">{greeting},</p>
-          <h1 className="page-title">{profile?.username ?? user.email}</h1>
-          <p className="page-subtitle">{roleName}</p>
+          <h1 className="page-title text-2xl sm:text-3xl md:text-4xl">{profile?.username ?? user.email}</h1>
+          <p className="page-subtitle text-sm sm:text-base">{roleName}</p>
         </div>
         <Link
           href="/bookings/new"
-          className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white rounded-xl transition-all duration-200 hover:opacity-90 shadow-sm"
+          className="flex items-center justify-center w-full sm:w-auto gap-2 px-4 py-2.5 text-sm font-semibold text-white rounded-xl transition-all duration-200 hover:opacity-90 shadow-sm"
           style={{ background: "#0D1A38" }}
         >
           <CalendarPlus className="w-4 h-4" />

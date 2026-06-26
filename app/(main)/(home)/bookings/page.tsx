@@ -1,4 +1,3 @@
-// File: src/app/(app)/bookings/page.tsx
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -18,15 +17,15 @@ export default async function BookingsPage() {
   const { data: bookings } = await buildMyBookingsQuery(supabase, user.id);
 
   return (
-    <div className="animate-fade-in">
-      <div className="page-header flex items-start justify-between">
-        <div>
-          <h1 className="page-title">My Bookings</h1>
-          <p className="page-subtitle">Track and manage all your booking requests</p>
+    <div className="animate-fade-in w-full">
+      <div className="page-header flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0 mb-6 sm:mb-8">
+        <div className="w-full sm:w-auto break-words">
+          <h1 className="page-title text-2xl sm:text-3xl md:text-4xl">My Bookings</h1>
+          <p className="page-subtitle text-sm sm:text-base">Track and manage all your booking requests</p>
         </div>
         <Link
           href="/bookings/new"
-          className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white rounded-xl transition-all hover:opacity-90 shadow-sm"
+          className="flex items-center justify-center w-full sm:w-auto gap-2 px-4 py-2.5 text-sm font-semibold text-white rounded-xl transition-all hover:opacity-90 shadow-sm"
           style={{ background: "#0D1A38" }}
         >
           <CalendarPlus className="w-4 h-4" />
