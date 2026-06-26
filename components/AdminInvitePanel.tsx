@@ -1,4 +1,3 @@
-// File: src/components/AdminInvitePanel.tsx
 'use client';
 
 import { useState } from 'react';
@@ -6,13 +5,15 @@ import { useRouter } from 'next/navigation';
 import {
   Mail, UserPlus, Send, RefreshCw, X,
   Clock, CheckCircle2, XCircle, Loader2,
-  AlertCircle, ChevronDown, Building, Info,
+  AlertCircle, ChevronDown, Info,
 } from 'lucide-react';
 import { formatDateTime } from "@/utils/format";
 import type { AdminInvite } from "@/utils/queries";
 
-// ✅ Import our new reusable modal
 import ConfirmModal from "@/components/ConfirmModal"; 
+// ✅ Imported the live-update tools
+import { useTableChangeRefresh } from "@/hooks/useTableChangeRefresh";
+import LiveUpdatePill from "@/components/LiveUpdatePill";
 
 /* ── Types & Interfaces ───────────────────────────────────── */
 export type InviteStatus = 'pending' | 'accepted' | 'cancelled' | 'expired';
@@ -21,7 +22,6 @@ interface AdminInvitePanelProps {
   initialInvites?: AdminInvite[]
 }
 
-/* ── Role options ─────────────────────────────────────────── */
 const ROLES = [
   {
     value: 1,
@@ -35,7 +35,6 @@ const ROLES = [
   },
 ];
 
-/* ── Status badge config ──────────────────────────────────── */
 const STATUS: Record<InviteStatus, { label: string; cls: string; Icon: React.ElementType }> = {
   pending:   { label: 'Pending',   cls: 'bg-amber-50 text-amber-700 border-amber-200',   Icon: Clock },
   accepted:  { label: 'Accepted',  cls: 'bg-emerald-50 text-emerald-700 border-emerald-200', Icon: CheckCircle2 },
@@ -46,24 +45,29 @@ const STATUS: Record<InviteStatus, { label: string; cls: string; Icon: React.Ele
 export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePanelProps) {
   const router = useRouter();
 
-  /* ── Form state ─────────────────────────────────────────── */
+  // ✅ Add the WebSocket hook here, listening to the 'invites' table
+  const { pinged } = useTableChangeRefresh({
+    table: "invites", // Assumes your table is named 'invites'
+    channelName: "admin-invites-channel",
+  });
+
   const [email,      setEmail]      = useState('');
   const [roleId,     setRoleId]     = useState(1);
   const [roleOpen,   setRoleOpen]   = useState(false);
 
-  /* ── UI state ────────────────────────────────────────────── */
-  const [invites,  setInvites]  = useState<AdminInvite[]>(initialInvites);
+  // Note: We still use initialInvites for fast first-paint, but router.refresh() 
+  // triggered by the LiveUpdatePill will fetch fresh data from the server automatically!
+  const invites = initialInvites; 
+  
   const [sending,  setSending]  = useState(false);
   const [actionId, setActionId] = useState<string | number | null>(null);
   const [success,  setSuccess]  = useState('');
   const [error,    setError]    = useState('');
   
-  // ✅ New state to track which invite is being cancelled by the modal
   const [cancelTarget, setCancelTarget] = useState<{ id: string | number, email: string } | null>(null);
 
   const selectedRole = ROLES.find(r => r.value === roleId);
 
-  /* ── Helpers ─────────────────────────────────────────────── */
   function clearFeedback() { setSuccess(''); setError(''); }
 
   async function callApi(url: string, body: any) {
@@ -77,7 +81,6 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
     return data;
   }
 
-  /* ── Send invite ─────────────────────────────────────────── */
   async function sendInvite(e: React.FormEvent) {
     e.preventDefault();
     clearFeedback();
@@ -104,7 +107,6 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
     }
   }
 
-  /* ── Resend invite ───────────────────────────────────────── */
   async function resend(inviteId: string | number) {
     clearFeedback();
     setActionId(inviteId);
@@ -121,7 +123,6 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
     }
   }
 
-  /* ── Execute Cancel (Called by the Modal) ────────────────── */
   async function executeCancel() {
     if (!cancelTarget) return;
     
@@ -132,25 +133,22 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
       const data = await callApi('/api/admin/invite/cancel', {
         invite_id: cancelTarget.id,
       });
-      
       setSuccess(data.message);
-      setInvites(prev =>
-        prev.map(i => i.id === cancelTarget.id ? { ...i, status: 'cancelled' } : i),
-      );
-      
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to cancel invite');
     } finally {
       setActionId(null);
-      setCancelTarget(null); // Close the modal
+      setCancelTarget(null);
     }
   }
 
-  /* ── Render ──────────────────────────────────────────────── */
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in relative">
       
+      {/* ✅ Place the live update pill at the top of the component */}
+      <LiveUpdatePill show={pinged} />
+
       {/* ════ Send Invite Card ════════════════════════════════ */}
       <div className="card overflow-visible">
         <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
@@ -172,18 +170,15 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
         </div>
 
         <form onSubmit={sendInvite} className="p-6">
-          {/* Success banner */}
           {success && (
             <div className="flex items-start gap-3 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl px-4 py-3 text-sm mb-5 animate-fade-in">
               <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
               <div>
-                <p className="font-semibold">Invite sent!</p>
-                <p className="text-xs mt-0.5 opacity-80">{success}</p>
+                <p className="font-semibold">{success}</p>
               </div>
             </div>
           )}
 
-          {/* Error banner */}
           {error && (
             <div className="flex items-start gap-3 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm mb-5 animate-fade-in">
               <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
@@ -213,7 +208,6 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
             </div>
           </div>
 
-          {/* Role selector */}
           <div className="mb-4">
             <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
               Assign role *
@@ -351,7 +345,6 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
                       <td>
                         {inv.status === 'pending' && (
                           <div className="flex items-center gap-2">
-                            {/* Resend */}
                             <button
                               onClick={() => resend(inv.id)}
                               disabled={isActioning}
@@ -363,7 +356,6 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
                                 : <RefreshCw className="w-3.5 h-3.5" />
                               }
                             </button>
-                            {/* Cancel */}
                             <button
                               onClick={() => setCancelTarget({ id: inv.id, email: inv.email })}
                               disabled={isActioning}
@@ -394,7 +386,6 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
         )}
       </div>
 
-      {/* ✅ Add the reusable modal at the bottom of the component */}
       <ConfirmModal 
         isOpen={cancelTarget !== null}
         onClose={() => setCancelTarget(null)}
