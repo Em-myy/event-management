@@ -74,7 +74,7 @@ export function buildAdminQueries(supabase: Awaited<ReturnType<typeof createClie
       .from("invites")
       .select(
         `
-        id, email, role_id, department, status, created_at, accepted_at,
+        id, email, role_id, status, created_at, accepted_at,
         profiles!invites_invited_by_fkey ( username )
       `
       )
@@ -86,7 +86,7 @@ export function buildAdminQueries(supabase: Awaited<ReturnType<typeof createClie
         `
         id, title, description, status, start_time, end_time, created_at,
         rejection_reason,
-        profiles!events_user_id_fkey ( username, email, department ),
+        profiles!events_user_id_fkey ( username, email ),
         venues ( name, location ),
         event_resources ( quantity_requested, resources ( name ) )
       `

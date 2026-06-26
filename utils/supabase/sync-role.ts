@@ -1,12 +1,7 @@
 import type { User } from "@supabase/supabase-js";
 import { createAdminClient } from "./admin";
 
-/**
- * Reads role_id (and department) from the invite's user_metadata
- * and writes it onto the profile row. Called from both /auth/confirm
- * (OTP invite flow) and /auth/callback (PKCE fallback), so it doesn't
- * matter which flow your Supabase project is configured to use.
- */
+
 export async function syncRoleFromInviteMetadata(user: User) {
   try {
     const metaRoleId = user.user_metadata?.role_id

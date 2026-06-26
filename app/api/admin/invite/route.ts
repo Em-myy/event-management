@@ -6,7 +6,6 @@ import { NextResponse, NextRequest } from 'next/server';
 interface SendInviteBody {
   email: string;
   role_id: string | number;
-  department?: string;
 }
 
 // 2. Type the request parameter using NextRequest
@@ -35,7 +34,7 @@ export async function POST(request: NextRequest) {
 
     // 2. Validate body using our TypeScript interface
     const body = (await request.json()) as Partial<SendInviteBody>;
-    const { email, role_id, department } = body;
+    const { email, role_id } = body;
 
     if (!email || !role_id) {
       return NextResponse.json(
@@ -74,7 +73,7 @@ export async function POST(request: NextRequest) {
       await adminClient.auth.admin.inviteUserByEmail(
         email.toLowerCase().trim(),
         {
-          data: { role_id: parsedRoleId, department: department ?? '' },
+          data: { role_id: parsedRoleId ?? '' },
           redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/confirm`,
         }
       );

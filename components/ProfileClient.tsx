@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { formatDate } from "@/utils/format";
-import { useAuth } from "@/context/AuthContext"; // ✅ Imported Auth Context
+import { useAuth } from "@/context/AuthContext";
 import {
   User,
   Mail,
@@ -21,6 +21,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { ProfileData } from "@/utils/queries";
+import ConfirmModal from "@/components/ConfirmModal"; // ✅ Imported the reusable modal
 
 /* ── Role badge colours ───────────────────────────────────── */
 const ROLE_STYLES: Record<string, string> = {
@@ -52,7 +53,6 @@ export default function ProfileClient({
   const router   = useRouter();
   const supabase = createClient();
 
-  // ✅ Pull in derived UI state from AuthContext
   const { avatarUrl, initials: contextInitials } = useAuth();
 
   /* ── Personal info state ─────────────────────────────────── */
@@ -72,6 +72,7 @@ export default function ProfileClient({
 
   /* ── Sign out all state ──────────────────────────────────── */
   const [signingOutAll, setSigningOutAll] = useState(false);
+  const [showSignOutModal, setShowSignOutModal] = useState(false); // ✅ Added modal state
 
   /* ── Role Details ────────────────────────────────────────── */
   const roleName = profile.roles?.name ?? "user";
@@ -124,14 +125,12 @@ export default function ProfileClient({
 
     setPwdSaving(true);
     try {
-      /* Step 1 — re-authenticate with current password */
       const { error: signInErr } = await supabase.auth.signInWithPassword({
         email,
         password: currentPwd,
       });
       if (signInErr) throw new Error("Current password is incorrect.");
 
-      /* Step 2 — update to new password */
       const { error: updateErr } = await supabase.auth.updateUser({
         password: newPwd,
       });
@@ -151,16 +150,11 @@ export default function ProfileClient({
     }
   }
 
-  /* ── Sign out all devices ────────────────────────────────── */
-  async function signOutAll() {
-    if (
-      !confirm(
-        "This will sign you out of every device and browser session. Continue?"
-      )
-    )
-      return;
+  /* ── Execute Sign out all devices ────────────────────────── */
+  async function executeSignOutAll() {
     setSigningOutAll(true);
     await supabase.auth.signOut({ scope: "global" });
+    setShowSignOutModal(false);
     router.push("/");
   }
 
@@ -170,7 +164,6 @@ export default function ProfileClient({
 
       {/* ── Avatar / identity header ────────────────────────── */}
       <div className="card p-6 flex items-center gap-5">
-        {/* ✅ Dynamic Avatar rendering from AuthContext */}
         <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-xl font-bold text-white shrink-0 shadow-md overflow-hidden">
           {avatarUrl ? (
             <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
@@ -179,7 +172,6 @@ export default function ProfileClient({
           )}
         </div>
 
-        {/* Info */}
         <div className="flex-1 min-w-0">
           <h2 className="text-xl font-display font-bold text-slate-900 truncate">
             {profile.username ?? "—"}
@@ -195,7 +187,6 @@ export default function ProfileClient({
           </div>
         </div>
 
-        {/* Member since */}
         <div className="text-right shrink-0 hidden sm:block">
           <p className="text-xs text-slate-400">Member since</p>
           <p className="text-sm font-semibold text-slate-700 mt-0.5">
@@ -226,7 +217,6 @@ export default function ProfileClient({
           ))}
         </div>
 
-        {/* Role note */}
         <p className="text-xs text-slate-400 mt-4 flex items-center gap-1.5">
           <Shield className="w-3 h-3 shrink-0" />
           Your role is <strong className="text-slate-600">{roleLabel}</strong>.
@@ -249,7 +239,6 @@ export default function ProfileClient({
             <Feedback type={infoMsg.type} text={infoMsg.text} />
           )}
 
-          {/* Email — read only */}
           <div>
             <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
               Email address
@@ -267,7 +256,6 @@ export default function ProfileClient({
             </p>
           </div>
 
-          {/* Full name */}
           <div>
             <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
               Username *
@@ -316,7 +304,6 @@ export default function ProfileClient({
             <Feedback type={pwdMsg.type} text={pwdMsg.text} />
           )}
 
-          {/* Current password */}
           <div>
             <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
               Current password *
@@ -330,7 +317,6 @@ export default function ProfileClient({
             />
           </div>
 
-          {/* New password */}
           <div>
             <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
               New password *
@@ -344,7 +330,6 @@ export default function ProfileClient({
             />
           </div>
 
-          {/* Confirm new password */}
           <div>
             <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
               Confirm new password *
@@ -410,8 +395,9 @@ export default function ProfileClient({
                 this device after.
               </p>
             </div>
+            {/* ✅ Update to trigger the modal instead of native confirm */}
             <button
-              onClick={signOutAll}
+              onClick={() => setShowSignOutModal(true)}
               disabled={signingOutAll}
               className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-all disabled:opacity-60 disabled:cursor-not-allowed shrink-0"
             >
@@ -425,6 +411,19 @@ export default function ProfileClient({
           </div>
         </div>
       </div>
+
+      {/* ✅ Add the Reusable Confirm Modal here */}
+      <ConfirmModal
+        isOpen={showSignOutModal}
+        onClose={() => setShowSignOutModal(false)}
+        onConfirm={executeSignOutAll}
+        title="Sign out everywhere?"
+        message="This will immediately invalidate every active session across all browsers and devices. You will need to sign in again to continue."
+        confirmText="Yes, Sign out"
+        cancelText="Cancel"
+        type="danger"
+        loading={signingOutAll}
+      />
     </div>
   );
 }

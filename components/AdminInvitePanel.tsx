@@ -1,3 +1,4 @@
+// File: src/components/AdminInvitePanel.tsx
 'use client';
 
 import { useState } from 'react';
@@ -10,10 +11,11 @@ import {
 import { formatDateTime } from "@/utils/format";
 import type { AdminInvite } from "@/utils/queries";
 
+// ✅ Import our new reusable modal
+import ConfirmModal from "@/components/ConfirmModal"; 
+
 /* ── Types & Interfaces ───────────────────────────────────── */
 export type InviteStatus = 'pending' | 'accepted' | 'cancelled' | 'expired';
-
-
 
 interface AdminInvitePanelProps {
   initialInvites?: AdminInvite[]
@@ -55,6 +57,9 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
   const [actionId, setActionId] = useState<string | number | null>(null);
   const [success,  setSuccess]  = useState('');
   const [error,    setError]    = useState('');
+  
+  // ✅ New state to track which invite is being cancelled by the modal
+  const [cancelTarget, setCancelTarget] = useState<{ id: string | number, email: string } | null>(null);
 
   const selectedRole = ROLES.find(r => r.value === roleId);
 
@@ -116,39 +121,38 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
     }
   }
 
-  /* ── Cancel invite ───────────────────────────────────────── */
-  async function cancel(inviteId: string | number, inviteEmail: string) {
-    if (!confirm(
-      `Cancel the invite for ${inviteEmail}?\n` +
-      'They will no longer be able to use the existing link.'
-    )) return;
-
+  /* ── Execute Cancel (Called by the Modal) ────────────────── */
+  async function executeCancel() {
+    if (!cancelTarget) return;
+    
     clearFeedback();
-    setActionId(inviteId);
+    setActionId(cancelTarget.id);
+    
     try {
       const data = await callApi('/api/admin/invite/cancel', {
-        invite_id: inviteId,
+        invite_id: cancelTarget.id,
       });
+      
       setSuccess(data.message);
       setInvites(prev =>
-        prev.map(i => i.id === inviteId ? { ...i, status: 'cancelled' } : i),
+        prev.map(i => i.id === cancelTarget.id ? { ...i, status: 'cancelled' } : i),
       );
+      
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to cancel invite');
     } finally {
       setActionId(null);
+      setCancelTarget(null); // Close the modal
     }
   }
 
   /* ── Render ──────────────────────────────────────────────── */
   return (
     <div className="space-y-6 animate-fade-in">
-
+      
       {/* ════ Send Invite Card ════════════════════════════════ */}
       <div className="card overflow-visible">
-
-        {/* Header */}
         <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
           <div
             className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
@@ -167,9 +171,7 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
           </div>
         </div>
 
-        {/* Form */}
         <form onSubmit={sendInvite} className="p-6">
-
           {/* Success banner */}
           {success && (
             <div className="flex items-start gap-3 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl px-4 py-3 text-sm mb-5 animate-fade-in">
@@ -192,7 +194,6 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
             </div>
           )}
 
-          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
               <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
@@ -218,7 +219,6 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
               Assign role *
             </label>
             <div className="relative">
-              {/* Trigger */}
               <button
                 type="button"
                 onClick={() => setRoleOpen(p => !p)}
@@ -230,7 +230,6 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
                 />
               </button>
 
-              {/* Dropdown */}
               {roleOpen && (
                 <div className="absolute z-30 top-full mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden">
                   {ROLES.map(opt => (
@@ -262,7 +261,6 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
             </div>
           </div>
 
-          {/* Info box */}
           <div className="flex items-start gap-3 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 mb-5">
             <Info className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
             <p className="text-xs text-slate-500 leading-relaxed">
@@ -273,7 +271,6 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
             </p>
           </div>
 
-          {/* Submit */}
           <div className="flex justify-end mt-6">
             <button
               type="submit"
@@ -308,7 +305,6 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
           </div>
         ) : (
           <div className="overflow-x-auto w-full">
-            {/* Added whitespace-nowrap to prevent columns from squishing on mobile */}
             <table className="data-table w-full text-left whitespace-nowrap">
               <thead>
                 <tr>
@@ -322,10 +318,7 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
               </thead>
               <tbody>
                 {invites.map(inv => {
-                  // 1. FIX THE STATUS ERROR: Tell TypeScript it's a valid InviteStatus
                   const cfg = STATUS[inv.status as InviteStatus] ?? STATUS.pending;
-                  
-                  // 2. FIX THE ARRAY ERROR: Normalize the profiles object
                   const inviter = Array.isArray(inv.profiles) ? inv.profiles[0] : inv.profiles;
                   
                   const { Icon }    = cfg;
@@ -336,15 +329,9 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
 
                   return (
                     <tr key={inv.id}>
-                      {/* Email */}
-                      <td className="font-medium text-slate-900">
-                        {inv.email}
-                      </td>
-
-                      {/* Role badge */}
+                      <td className="font-medium text-slate-900">{inv.email}</td>
                       <td>
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
                             inv.role_id === 2
                               ? 'bg-amber-50 text-amber-700 border-amber-200'
                               : 'bg-blue-50 text-blue-700 border-blue-200'
@@ -353,28 +340,14 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
                           {roleName}
                         </span>
                       </td>
-
-                      {/* Invited by (NOW FIXED AND ERROR-FREE) */}
-                      <td className="text-slate-500">
-                        {inviter?.username ?? 'Admin'}
-                      </td>
-
-                      {/* Date sent */}
-                      <td className="text-slate-500">
-                        {formatDateTime(inv.created_at)}
-                      </td>
-
-                      {/* Status badge */}
+                      <td className="text-slate-500">{inviter?.username ?? 'Admin'}</td>
+                      <td className="text-slate-500">{formatDateTime(inv.created_at)}</td>
                       <td>
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${cfg.cls}`}
-                        >
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${cfg.cls}`}>
                           <Icon className="w-3 h-3" />
                           {cfg.label}
                         </span>
                       </td>
-
-                      {/* Actions */}
                       <td>
                         {inv.status === 'pending' && (
                           <div className="flex items-center gap-2">
@@ -392,7 +365,7 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
                             </button>
                             {/* Cancel */}
                             <button
-                              onClick={() => cancel(inv.id, inv.email)}
+                              onClick={() => setCancelTarget({ id: inv.id, email: inv.email })}
                               disabled={isActioning}
                               title="Cancel invite"
                               className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all disabled:opacity-50"
@@ -404,9 +377,7 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
 
                         {inv.status === 'accepted' && (
                           <span className="text-xs text-slate-400">
-                            Joined {inv.accepted_at
-                              ? formatDateTime(inv.accepted_at)
-                              : ''}
+                            Joined {inv.accepted_at ? formatDateTime(inv.accepted_at) : ''}
                           </span>
                         )}
 
@@ -422,6 +393,18 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
           </div>
         )}
       </div>
+
+      {/* ✅ Add the reusable modal at the bottom of the component */}
+      <ConfirmModal 
+        isOpen={cancelTarget !== null}
+        onClose={() => setCancelTarget(null)}
+        onConfirm={executeCancel}
+        title="Cancel Invite?"
+        message={`Are you sure you want to cancel the invite for ${cancelTarget?.email}?\n\nThey will no longer be able to use the existing link.`}
+        confirmText="Yes, Cancel Invite"
+        cancelText="Keep it"
+        loading={actionId === cancelTarget?.id}
+      />
     </div>
   );
 }

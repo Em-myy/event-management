@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import AdminInvitePanel from '@/components/AdminInvitePanel';
+import ConfirmModal from '@/components/ConfirmModal'; 
 import {
   Plus, Pencil, Trash2, Save, X,
   Loader2, Building2, Package, Users, MailPlus,
@@ -16,6 +17,11 @@ import type {
   AdminInvite, 
   AdminBooking 
 } from "@/utils/queries";
+import { useTableChangeRefresh } from "@/hooks/useTableChangeRefresh";
+import LiveUpdatePill            from "@/components/LiveUpdatePill";
+import { StatusBadge } from '@/utils/status-badge';
+import { formatDateTime } from '@/utils/format';
+import ApprovalButtons from './ApprovalButtons';
 
 type Venue = Database['public']['Tables']['venues']['Row'];
 type Resource = Database['public']['Tables']['resources']['Row'];
@@ -31,7 +37,6 @@ const TABS: { id: TabId; label: string; icon: typeof Building2 }[] = [
   { id: "invites",   label: "Invites",      icon: MailPlus   },
   { id: "bookings",  label: "All Bookings", icon: CalendarDays },
 ];
-
 
 /* ── Root component ─────────────────────────────────────────── */
 interface AdminTabsProps {
@@ -53,7 +58,7 @@ export default function AdminTabs({
 
   return (
     <div>
-      {/* Tab bar - Added flex-wrap and w-full for mobile wrapping */}
+      {/* Tab bar */}
       <div className="flex flex-wrap sm:flex-nowrap gap-1 bg-slate-200 p-1 rounded-xl mb-6 w-full sm:w-fit">
         {TABS.map(t => {
           const Icon = t.icon;
@@ -91,6 +96,11 @@ function VenuesTab({ initial }: { initial: Venue[] }) {
   const [items, setItems] = useState<Venue[]>(initial);
   const [editing, setEditing] = useState<Partial<Venue> | null>(null);
   const [loading, setLoading] = useState(false);
+  
+  // Modal States
+  const [venueToDelete, setVenueToDelete] = useState<Venue | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [alertMsg, setAlertMsg] = useState<string | null>(null); 
 
   const blank: Partial<Venue> = { name: '', location: '', capacity: 0, description: '', is_active: true };
 
@@ -131,16 +141,25 @@ function VenuesTab({ initial }: { initial: Venue[] }) {
       setEditing(null);
     } catch (err) {
       console.error(err);
-      alert('Error saving venue');
+      setAlertMsg('There was an error saving the venue. Please try again.'); 
     } finally { 
       setLoading(false); 
     }
   }
 
-  async function remove(id: string) {
-    if (!confirm('Delete this venue? This cannot be undone.')) return;
-    await supabase.from('venues').delete().eq('id', id);
-    setItems(p => p.filter(x => x.id !== id));
+  async function executeDelete() {
+    if (!venueToDelete) return;
+    setIsDeleting(true);
+    try {
+      await supabase.from('venues').delete().eq('id', venueToDelete.id);
+      setItems(p => p.filter(x => x.id !== venueToDelete.id));
+    } catch (err) {
+      console.error("Error deleting venue", err);
+      setAlertMsg('Failed to delete venue. It might be in use by an existing booking.');
+    } finally {
+      setIsDeleting(false);
+      setVenueToDelete(null);
+    }
   }
 
   async function toggleActive(item: Venue) {
@@ -151,14 +170,16 @@ function VenuesTab({ initial }: { initial: Venue[] }) {
       .select()
       .single();
       
-    if (error) return console.error(error);
+    if (error) {
+      console.error(error);
+      return setAlertMsg('Failed to update venue status.');
+    }
     setItems(p => p.map(x => x.id === data.id ? data : x));
   }
 
   return (
     <div>
       <div className="flex justify-end mb-4">
-        {/* Full width button on mobile */}
         <button onClick={() => setEditing(blank)}
           className="flex items-center justify-center gap-2 cursor-pointer px-4 py-2 text-sm font-semibold text-white rounded-xl shadow-sm hover:opacity-90 w-full sm:w-auto"
           style={{ background: '#0D1A38' }}>
@@ -167,7 +188,6 @@ function VenuesTab({ initial }: { initial: Venue[] }) {
       </div>
 
       <div className="card overflow-hidden">
-        {/* Added overflow container and whitespace-nowrap */}
         <div className="overflow-x-auto w-full">
           <table className="data-table w-full text-left whitespace-nowrap">
             <thead>
@@ -205,7 +225,7 @@ function VenuesTab({ initial }: { initial: Venue[] }) {
                         className="p-1.5 cursor-pointer rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all">
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
-                      <button onClick={() => remove(v.id)}
+                      <button onClick={() => setVenueToDelete(v)}
                         className="p-1.5 cursor-pointer rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -231,6 +251,29 @@ function VenuesTab({ initial }: { initial: Venue[] }) {
           onSave={save} onClose={() => setEditing(null)}
         />
       )}
+
+      
+      <ConfirmModal 
+        isOpen={venueToDelete !== null}
+        onClose={() => setVenueToDelete(null)}
+        onConfirm={executeDelete}
+        title="Delete Venue?"
+        message={`Are you sure you want to delete "${venueToDelete?.name}"?\n\nThis action cannot be undone.`}
+        confirmText="Yes, Delete"
+        loading={isDeleting}
+      />
+
+      
+      <ConfirmModal 
+        isOpen={alertMsg !== null}
+        onClose={() => setAlertMsg(null)}
+        onConfirm={() => setAlertMsg(null)}
+        title="Action Failed"
+        message={alertMsg ?? ""}
+        confirmText="Understood"
+        type="danger"
+        showCancel={false} 
+      />
     </div>
   );
 }
@@ -243,6 +286,11 @@ function ResourcesTab({ initial }: { initial: Resource[] }) {
   const [items, setItems] = useState<Resource[]>(initial);
   const [editing, setEditing] = useState<Partial<Resource> | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Modal States
+  const [resourceToDelete, setResourceToDelete] = useState<Resource | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [alertMsg, setAlertMsg] = useState<string | null>(null); // ✅ Error Alert State
 
   const blank: Partial<Resource> = { name: '', description: '', total_quantity: 0, condition: 'Good', is_active: true };
 
@@ -283,16 +331,25 @@ function ResourcesTab({ initial }: { initial: Resource[] }) {
       setEditing(null);
     } catch (err) {
       console.error(err);
-      alert('Error saving resource');
+      setAlertMsg('There was an error saving the resource. Please try again.'); // ✅ Modal instead of alert()
     } finally { 
       setLoading(false); 
     }
   }
 
-  async function remove(id: string) {
-    if (!confirm('Delete this resource?')) return;
-    await supabase.from('resources').delete().eq('id', id);
-    setItems(p => p.filter(x => x.id !== id));
+  async function executeDelete() {
+    if (!resourceToDelete) return;
+    setIsDeleting(true);
+    try {
+      await supabase.from('resources').delete().eq('id', resourceToDelete.id);
+      setItems(p => p.filter(x => x.id !== resourceToDelete.id));
+    } catch (err) {
+      console.error("Error deleting resource", err);
+      setAlertMsg('Failed to delete resource. It might be allocated to an existing booking.'); // ✅ Modal instead of alert()
+    } finally {
+      setIsDeleting(false);
+      setResourceToDelete(null);
+    }
   }
 
   const conditionColor: Record<string, string> = {
@@ -304,7 +361,6 @@ function ResourcesTab({ initial }: { initial: Resource[] }) {
   return (
     <div>
       <div className="flex justify-end mb-4">
-        {/* Full width button on mobile */}
         <button onClick={() => setEditing(blank)}
           className="flex items-center justify-center gap-2 cursor-pointer px-4 py-2 text-sm font-semibold text-white rounded-xl shadow-sm hover:opacity-90 w-full sm:w-auto"
           style={{ background: '#0D1A38' }}>
@@ -313,7 +369,6 @@ function ResourcesTab({ initial }: { initial: Resource[] }) {
       </div>
 
       <div className="card overflow-hidden">
-        {/* Added overflow container and whitespace-nowrap */}
         <div className="overflow-x-auto w-full">
           <table className="data-table w-full text-left whitespace-nowrap">
             <thead>
@@ -354,7 +409,7 @@ function ResourcesTab({ initial }: { initial: Resource[] }) {
                         className="p-1.5 cursor-pointer rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all">
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
-                      <button onClick={() => remove(r.id)}
+                      <button onClick={() => setResourceToDelete(r)}
                         className="p-1.5 cursor-pointer rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -381,6 +436,29 @@ function ResourcesTab({ initial }: { initial: Resource[] }) {
           onSave={save} onClose={() => setEditing(null)}
         />
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal 
+        isOpen={resourceToDelete !== null}
+        onClose={() => setResourceToDelete(null)}
+        onConfirm={executeDelete}
+        title="Delete Resource?"
+        message={`Are you sure you want to delete "${resourceToDelete?.name}"?\n\nThis action cannot be undone.`}
+        confirmText="Yes, Delete"
+        loading={isDeleting}
+      />
+
+      {/* ✅ Error Alert Modal */}
+      <ConfirmModal 
+        isOpen={alertMsg !== null}
+        onClose={() => setAlertMsg(null)}
+        onConfirm={() => setAlertMsg(null)}
+        title="Action Failed"
+        message={alertMsg ?? ""}
+        confirmText="Understood"
+        type="danger"
+        showCancel={false} 
+      />
     </div>
   );
 }
@@ -392,6 +470,7 @@ function UsersTab({ initial }: { initial: Profile[] }) {
   const supabase = createClient();
   const [users, setUsers] = useState<Profile[]>(initial);
   const [loading, setLoading] = useState<Record<string, boolean>>({});
+  const [alertMsg, setAlertMsg] = useState<string | null>(null); 
 
   async function updateRole(userId: string, newRoleId: string) {
     setLoading(p => ({ ...p, [userId]: true }));
@@ -407,7 +486,7 @@ function UsersTab({ initial }: { initial: Profile[] }) {
       setUsers(p => p.map(u => u.id === data.id ? (data as unknown as Profile) : u));
     } catch (err) {
       console.error(err);
-      alert('Failed to update user role');
+      setAlertMsg('Failed to update user role. Please try again.'); 
     } finally {
       setLoading(p => ({ ...p, [userId]: false }));
     }
@@ -415,7 +494,6 @@ function UsersTab({ initial }: { initial: Profile[] }) {
 
   return (
     <div className="card overflow-hidden">
-      {/* Added overflow container and whitespace-nowrap */}
       <div className="overflow-x-auto w-full">
         <table className="data-table w-full text-left whitespace-nowrap">
           <thead>
@@ -449,6 +527,227 @@ function UsersTab({ initial }: { initial: Profile[] }) {
           </tbody>
         </table>
       </div>
+
+      
+      <ConfirmModal 
+        isOpen={alertMsg !== null}
+        onClose={() => setAlertMsg(null)}
+        onConfirm={() => setAlertMsg(null)}
+        title="Action Failed"
+        message={alertMsg ?? ""}
+        confirmText="Understood"
+        type="danger"
+        showCancel={false} 
+      />
+    </div>
+  );
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   ALL BOOKINGS TAB
+═══════════════════════════════════════════════════════════════ */
+function AllBookingsTab({ initial }: { initial: AdminBooking[] }) {
+  const [filter, setFilter] = useState<string>("all");
+  const [search, setSearch] = useState("");
+
+  /* Live updates — admin sees new bookings without refreshing */
+  const { pinged } = useTableChangeRefresh({
+    table:       "events",
+    channelName: "admin-all-bookings",
+  });
+
+  const filtered = initial
+    .filter((b) => filter === "all" || b.status === filter)
+    .filter((b) => {
+      const requester = Array.isArray(b.profiles) ? b.profiles[0] : b.profiles;
+      const venue = Array.isArray(b.venues) ? b.venues[0] : b.venues;
+      if (!search.trim()) return true;
+      const q = search.toLowerCase();
+      return (
+        b.title.toLowerCase().includes(q) ||
+        requester.username?.toLowerCase().includes(q) ||
+        requester.email?.toLowerCase().includes(q) ||
+        venue.name?.toLowerCase().includes(q)
+      );
+    });
+
+  const counts = {
+    all:      initial.length,
+    pending:  initial.filter((b) => b.status === "pending").length,
+    approved: initial.filter((b) => b.status === "approved").length,
+    rejected: initial.filter((b) => b.status === "rejected").length,
+  };
+
+  return (
+    <div>
+      <LiveUpdatePill show={pinged} />
+
+      {/* Search + filter row */}
+      <div className="flex flex-wrap items-center gap-3 mb-4">
+        <div className="relative flex-1 min-w-[200px]">
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by title, requester, or venue..."
+            className="field-input pl-9 text-xs"
+          />
+          <svg
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"
+            fill="none" stroke="currentColor" viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+
+        <div className="flex gap-1.5 flex-wrap">
+          {(
+            [
+              { key: "all",      label: "All"      },
+              { key: "pending",  label: "Pending"  },
+              { key: "approved", label: "Approved" },
+              { key: "rejected", label: "Rejected" },
+            ] as const
+          ).map((f) => (
+            <button
+              key={f.key}
+              onClick={() => setFilter(f.key)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+                filter === f.key
+                  ? "bg-slate-900 text-white border-slate-900"
+                  : "bg-white text-slate-600 border-slate-300 hover:border-slate-400"
+              }`}
+            >
+              {f.label}
+              <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+                filter === f.key ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
+              }`}>
+                {counts[f.key]}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* No bookings at all in the system */}
+      {initial.length === 0 && (
+        <div className="card px-6 py-16 text-center">
+          <CalendarDays className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+          <p className="text-sm font-medium text-slate-500">
+            No bookings in the system yet
+          </p>
+          <p className="text-xs text-slate-400 mt-1">
+            Bookings will appear here once users start submitting requests.
+          </p>
+        </div>
+      )}
+
+      {/* Bookings exist but search/filter returned nothing */}
+      {initial.length > 0 && filtered.length === 0 && (
+        <div className="card px-6 py-16 text-center">
+          <CalendarDays className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+          <p className="text-sm font-medium text-slate-500">
+            No bookings match your filter
+          </p>
+          <button
+            onClick={() => { setFilter("all"); setSearch(""); }}
+            className="text-xs text-blue-600 hover:text-blue-800 mt-2 underline"
+          >
+            Clear filters
+          </button>
+        </div>
+      )}
+
+      {/* Booking cards */}
+      {filtered.length > 0 && (
+        <div className="space-y-4">
+          {filtered.map((bk) => {
+            const requester = Array.isArray(bk.profiles) ? bk.profiles[0] : bk.profiles;
+            const resources = bk.event_resources ?? [];
+            const venue = Array.isArray(bk.venues) ? bk.venues[0] : bk.venues;
+            return (
+              <div key={bk.id} className="card p-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+
+                    {/* Title + status */}
+                    <div className="flex items-center gap-3 mb-2 flex-wrap">
+                      <h3 className="font-display font-bold text-slate-900 text-base truncate">
+                        {bk.title}
+                      </h3>
+                      <StatusBadge status={bk.status} />
+                    </div>
+
+                    {bk.description && (
+                      <p className="text-sm text-slate-500 mb-3 line-clamp-1">
+                        {bk.description}
+                      </p>
+                    )}
+
+                    {/* Meta */}
+                    <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-slate-500 mb-2">
+                      <span>
+                        <span className="font-semibold text-slate-700">Submitted by:</span>{" "}
+                        {requester?.username ?? "—"}
+                        {requester?.email && (
+                          <span className="text-slate-400"> · {requester.email}</span>
+                        )}
+                      </span>
+                      <span>
+                        <span className="font-semibold text-slate-700">Venue:</span>{" "}
+                        {venue.name ?? "—"}
+                      </span>
+                      <span>
+                        <span className="font-semibold text-slate-700">From:</span>{" "}
+                        {formatDateTime(bk.start_time)}
+                      </span>
+                      <span>
+                        <span className="font-semibold text-slate-700">To:</span>{" "}
+                        {formatDateTime(bk.end_time)}
+                      </span>
+                    </div>
+
+                    {/* Resources */}
+                    {resources.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mb-2">
+                        {resources.map((r, idx) => {
+                           const resObj = Array.isArray(r.resources) ? r.resources[0] : r.resources;
+                           return (
+                          <span
+                            key={`${resObj?.name}-${idx}`}
+                            className="px-2 py-0.5 bg-slate-100 text-xs rounded-md text-slate-600 font-medium"
+                          >
+                             {resObj?.name} × {r.quantity_requested}
+                          </span>
+                           );
+                      })}
+                      </div>
+                    )}
+
+                    {/* Rejection reason */}
+                    {bk.status === "rejected" && bk.rejection_reason && (
+                      <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2 mb-2">
+                        <span className="font-semibold">Rejection reason:</span>{" "}
+                        {bk.rejection_reason}
+                      </p>
+                    )}
+
+                    <p className="text-xs text-slate-400">
+                      Submitted {formatDateTime(bk.created_at)}
+                    </p>
+                  </div>
+
+                  {/* Approve / Reject only for pending */}
+                  {bk.status === "pending" && (
+                    <ApprovalButtons bookingId={bk.id} />
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -456,6 +755,8 @@ function UsersTab({ initial }: { initial: Profile[] }) {
 /* ═══════════════════════════════════════════════════════════════
    REUSABLE FORM MODAL
 ═══════════════════════════════════════════════════════════════ */
+// ... (The FormModal component remains entirely unchanged from your previous code) ...
+
 interface FormField {
   key: string;
   label: string;
@@ -476,9 +777,8 @@ function FormModal({ title, fields, data, loading, onSave, onClose }: FormModalP
   const [form, setForm] = useState({ ...data });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 sm:p-6"
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4 sm:p-6"
       onClick={e => e.target === e.currentTarget && onClose()}>
-      {/* Modal adjusts well to mobile screens natively, but ensured it doesn't overflow height */}
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 animate-slide-up max-h-full overflow-y-auto">
 
         <div className="flex items-center justify-between mb-6">
