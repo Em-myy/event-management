@@ -22,6 +22,7 @@ import LiveUpdatePill            from "@/components/LiveUpdatePill";
 import { StatusBadge } from '@/utils/status-badge';
 import { formatDateTime } from '@/utils/format';
 import ApprovalButtons from './ApprovalButtons';
+import { useAuth } from "@/context/AuthContext";
 
 type Venue = Database['public']['Tables']['venues']['Row'];
 type Resource = Database['public']['Tables']['resources']['Row'];
@@ -84,6 +85,7 @@ export default function AdminTabs({
       {tab === 'resources' && <ResourcesTab initial={initialResources} />}
       {tab === 'users'     && <UsersTab     initial={initialUsers}     />}
       {tab === 'invites'   && <AdminInvitePanel initialInvites={initialInvites} />}
+      {tab === 'bookings'  && <AllBookingsTab initial={initialBookings} />}
     </div>
   );
 }
@@ -437,7 +439,7 @@ function ResourcesTab({ initial }: { initial: Resource[] }) {
         />
       )}
 
-      {/* Delete Confirmation Modal */}
+      
       <ConfirmModal 
         isOpen={resourceToDelete !== null}
         onClose={() => setResourceToDelete(null)}
@@ -448,7 +450,7 @@ function ResourcesTab({ initial }: { initial: Resource[] }) {
         loading={isDeleting}
       />
 
-      {/* ✅ Error Alert Modal */}
+      
       <ConfirmModal 
         isOpen={alertMsg !== null}
         onClose={() => setAlertMsg(null)}
@@ -471,6 +473,7 @@ function UsersTab({ initial }: { initial: Profile[] }) {
   const [users, setUsers] = useState<Profile[]>(initial);
   const [loading, setLoading] = useState<Record<string, boolean>>({});
   const [alertMsg, setAlertMsg] = useState<string | null>(null); 
+  const { user: currentUser, loading: authLoading } = useAuth();
 
   async function updateRole(userId: string, newRoleId: string) {
     setLoading(p => ({ ...p, [userId]: true }));
@@ -485,7 +488,7 @@ function UsersTab({ initial }: { initial: Profile[] }) {
       if (error) throw error;
       setUsers(p => p.map(u => u.id === data.id ? (data as unknown as Profile) : u));
     } catch (err) {
-      console.error(err);
+      console.log(err);
       setAlertMsg('Failed to update user role. Please try again.'); 
     } finally {
       setLoading(p => ({ ...p, [userId]: false }));
@@ -502,28 +505,51 @@ function UsersTab({ initial }: { initial: Profile[] }) {
             </tr>
           </thead>
           <tbody>
-            {users.map(u => (
+            {users.map(u => {
+              const isMe = currentUser?.id === u.id;
+              return (
               <tr key={u.id}>
-                <td className="font-medium text-slate-900">{u.username || '—'}</td>
+                <td className="font-medium text-slate-900">
+                  {u.username || '—'}
+                  {isMe && (
+                      <span className="ml-3 text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                        You
+                      </span>
+                    )}
+                  </td>
                 <td className="text-slate-500">{u.email}</td>
                 <td>
                   <div className="flex items-center gap-2">
-                    <select
-                      value={u.role_id || 1}
-                      onChange={e => updateRole(u.id, e.target.value)}
-                      className="text-xs px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-700 font-semibold outline-none cursor-pointer hover:border-slate-400 transition-colors"
-                    >
-                      <option value={1}>General User</option>
-                      <option value={2}>HOD / Coordinator</option>
-                      <option value={3}>Administrator</option>
-                    </select>
-                    {loading[u.id] && (
-                      <Loader2 className="w-3.5 h-3.5 text-slate-400 animate-spin" />
-                    )}
-                  </div>
+                      {authLoading ? (
+                        // ✅ Show a tiny spinner while we figure out who is logged in
+                        <Loader2 className="w-4 h-4 text-slate-300 animate-spin" />
+                      ) : isMe ? (
+                        // ✅ If it's your account, just show the role text.
+                        <span className="text-xs font-semibold text-slate-500 px-2.5 py-1.5">
+                          Administrator
+                        </span>
+                      ) : (
+                        // ✅ If it's a normal user, show the dropdown
+                        <select
+                          value={u.role_id || 1}
+                          onChange={e => updateRole(u.id, e.target.value)}
+                          className="text-xs px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-700 font-semibold outline-none cursor-pointer hover:border-slate-400 transition-colors"
+                        >
+                          <option value={1}>General User</option>
+                          <option value={2}>HOD / Coordinator</option>
+                          <option value={3}>Administrator</option>
+                        </select>
+                      )}
+                      
+                      {/* This is your existing spinner for the database update */}
+                      {loading[u.id] && (
+                        <Loader2 className="w-3.5 h-3.5 text-slate-400 animate-spin" />
+                      )}
+                    </div>
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -590,7 +616,7 @@ function AllBookingsTab({ initial }: { initial: AdminBooking[] }) {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by title, requester, or venue..."
-            className="field-input pl-9 text-xs"
+            className="field-input !pl-9 text-xs"
           />
           <svg
             className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"
