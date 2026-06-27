@@ -1,4 +1,3 @@
-// File: src/components/ConfirmModal.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -47,26 +46,26 @@ export default function ConfirmModal({
   const Icon = isDanger ? AlertTriangle : CheckCircle;
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-slide-up">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 bg-slate-900/40 backdrop-blur-sm animate-fade-in w-full">
+      <div className="bg-white rounded-2xl p-5 sm:p-6 max-w-sm w-full shadow-2xl animate-slide-up">
         
         <div className={`flex items-center gap-3 ${titleColor} mb-4`}>
           <div className={`p-2 rounded-full shrink-0 ${iconBg}`}>
             <Icon className={`w-6 h-6 ${iconColor}`} />
           </div>
-          <h3 className="text-lg font-bold leading-tight">{title}</h3>
+          <h3 className="text-lg sm:text-xl font-bold leading-tight break-words">{title}</h3>
         </div>
 
-        <p className="text-sm text-slate-500 mb-6 whitespace-pre-wrap leading-relaxed">
+        <p className="text-sm text-slate-500 mb-6 whitespace-pre-wrap leading-relaxed break-words">
           {message}
         </p>
 
-        <div className="flex gap-3">
+        <div className="flex flex-col-reverse sm:flex-row gap-3">
           {showCancel && (
           <button
             onClick={onClose}
             disabled={loading}
-            className="flex-1 cursor-pointer px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors disabled:opacity-50"
+            className="flex-1 cursor-pointer px-4 py-3 sm:py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors disabled:opacity-50 active:scale-[0.98]"
           >
             {cancelText}
           </button>
@@ -74,9 +73,9 @@ export default function ConfirmModal({
           <button
             onClick={onConfirm}
             disabled={loading}
-            className={`flex-1 flex cursor-pointer items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white rounded-xl transition-all disabled:opacity-50 ${btnColor}`}
+            className={`flex-1 flex cursor-pointer items-center justify-center gap-2 px-4 py-3 sm:py-2.5 text-sm font-semibold text-white rounded-xl transition-all disabled:opacity-50 active:scale-[0.98] ${btnColor}`}
           >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : confirmText}
+            {loading ? <Loader2 className="w-4 h-4 animate-spin shrink-0" /> : confirmText}
           </button>
         </div>
         

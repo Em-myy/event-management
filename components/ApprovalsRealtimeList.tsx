@@ -1,4 +1,3 @@
-// File: src/components/ApprovalsRealtimeList.tsx
 "use client";
 
 import { formatDateTime } from "@/utils/format";
@@ -22,101 +21,103 @@ export default function ApprovalsRealtimeList({ initialBookings }: Props) {
   const bookings = initialBookings;
 
   return (
-    <div>
+    <div className="w-full">
       <LiveUpdatePill show={pinged} />
 
       {bookings.length > 0 && (
-        <div className="inline-flex items-center gap-2 mb-6 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2 text-sm font-semibold text-amber-700">
-          <Clock className="w-4 h-4" />
-          {bookings.length} request{bookings.length > 1 ? "s" : ""} awaiting review
+        <div className="inline-flex items-center gap-2 mb-4 sm:mb-6 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold text-amber-700">
+          <Clock className="w-4 h-4 shrink-0" />
+          <span>{bookings.length} request{bookings.length > 1 ? "s" : ""} awaiting review</span>
         </div>
       )}
 
       {bookings.length === 0 ? (
-        <div className="card px-6 py-20 text-center">
-          <CheckSquare className="w-12 h-12 text-emerald-300 mx-auto mb-4" />
-          <p className="font-semibold text-slate-700">All caught up!</p>
-          <p className="text-sm text-slate-400 mt-1">
+        <div className="card px-4 sm:px-6 py-12 sm:py-20 text-center w-full">
+          <CheckSquare className="w-10 sm:w-12 h-10 sm:h-12 text-emerald-300 mx-auto mb-3 sm:mb-4" />
+          <p className="font-semibold text-slate-700 text-sm sm:text-base">All caught up!</p>
+          <p className="text-xs sm:text-sm text-slate-400 mt-1">
             No pending booking requests at this time.
           </p>
         </div>
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-4 sm:space-y-5 w-full">
           {bookings.map((bk) => {
             const resources = bk.event_resources ?? [];
             const requester = Array.isArray(bk.profiles) ? bk.profiles[0] : bk.profiles;
             const venue = Array.isArray(bk.venues) ? bk.venues[0] : bk.venues;
             return (
-              <div key={bk.id} className="card p-6 animate-slide-up">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="font-display font-bold text-slate-900 text-lg">
+              <div key={bk.id} className="card p-4 sm:p-6 animate-slide-up w-full">
+                <div className="flex flex-col md:flex-row items-start justify-between gap-4 sm:gap-6 w-full">
+                  <div className="flex-1 min-w-0 w-full">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2 w-full">
+                      <h3 className="font-display font-bold text-slate-900 text-base sm:text-lg break-words min-w-0">
                         {bk.title}
                       </h3>
                       <StatusBadge status={bk.status} />
                     </div>
 
                     {bk.description && (
-                      <p className="text-sm text-slate-500 mb-4">{bk.description}</p>
+                      <p className="text-sm text-slate-500 mb-4 break-words w-full">{bk.description}</p>
                     )}
 
-                    <div className="grid sm:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
                       <InfoCard label="Requester">
-                        <p className="font-semibold text-slate-900">
+                        <p className="font-semibold text-slate-900 break-words">
                           {requester?.username ?? "—"}
                         </p>
-                        <p className="text-slate-500 text-xs">{requester?.email}</p>
+                        <p className="text-slate-500 text-xs break-words">{requester?.email}</p>
                       </InfoCard>
 
                       <InfoCard label="Schedule">
-                        <p className="font-semibold text-slate-900">
+                        <p className="font-semibold text-slate-900 break-words">
                           {formatDateTime(bk.start_time)}
                         </p>
-                        <p className="text-slate-500 text-xs">
+                        <p className="text-slate-500 text-xs break-words">
                           to {formatDateTime(bk.end_time)}
                         </p>
                       </InfoCard>
 
                       <InfoCard label="Venue">
-                        <p className="font-semibold text-slate-900">
+                        <p className="font-semibold text-slate-900 break-words">
                           {venue.name ?? "—"}
                         </p>
-                        <p className="text-slate-500 text-xs">{venue.location}</p>
+                        <p className="text-slate-500 text-xs break-words">{venue.location}</p>
                         {venue.capacity && (
-                          <p className="text-slate-400 text-xs">
+                          <p className="text-slate-400 text-xs break-words">
                             Capacity: {venue.capacity}
                           </p>
                         )}
                       </InfoCard>
 
                      {resources.length > 0 && (
-  <InfoCard label={`Resources (${resources.length})`}>
-    <div className="flex flex-wrap gap-1 mt-1">
-      {resources.map((r, idx) => {
-        // Normalize the nested resource object
-        const resObj = Array.isArray(r.resources) ? r.resources[0] : r.resources;
+                        <InfoCard label={`Resources (${resources.length})`}>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {resources.map((r, idx) => {
+                              // Normalize the nested resource object
+                              const resObj = Array.isArray(r.resources) ? r.resources[0] : r.resources;
 
-        return (
-          <span
-            key={`${resObj?.name}-${idx}`}
-            className="px-2 py-0.5 bg-slate-100 text-xs rounded-md text-slate-700 font-medium"
-          >
-            {resObj?.name} × {r.quantity_requested}
-          </span>
-        );
-      })}
-    </div>
-  </InfoCard>
-)}
+                              return (
+                                <span
+                                  key={`${resObj?.name}-${idx}`}
+                                  className="px-2 py-0.5 bg-slate-100 text-xs rounded-md text-slate-700 font-medium"
+                                >
+                                  {resObj?.name} × {r.quantity_requested}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        </InfoCard>
+                      )}
                     </div>
 
-                    <p className="text-xs text-slate-400 mt-4">
+                    <p className="text-xs text-slate-400 mt-4 break-words">
                       Submitted {formatDateTime(bk.created_at)}
                     </p>
                   </div>
 
-                  <ApprovalButtons bookingId={bk.id} />
+                  <div className="w-full md:w-auto shrink-0 mt-2 md:mt-0">
+                    <ApprovalButtons bookingId={bk.id} />
+                  </div>
                 </div>
               </div>
             );
@@ -135,8 +136,8 @@ function InfoCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
-      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+    <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 w-full min-w-0">
+      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 break-words">
         {label}
       </p>
       {children}

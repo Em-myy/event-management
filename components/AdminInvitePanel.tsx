@@ -9,9 +9,7 @@ import {
 } from 'lucide-react';
 import { formatDateTime } from "@/utils/format";
 import type { AdminInvite } from "@/utils/queries";
-
 import ConfirmModal from "@/components/ConfirmModal"; 
-// ✅ Imported the live-update tools
 import { useTableChangeRefresh } from "@/hooks/useTableChangeRefresh";
 import LiveUpdatePill from "@/components/LiveUpdatePill";
 
@@ -45,9 +43,8 @@ const STATUS: Record<InviteStatus, { label: string; cls: string; Icon: React.Ele
 export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePanelProps) {
   const router = useRouter();
 
-  // ✅ Add the WebSocket hook here, listening to the 'invites' table
   const { pinged } = useTableChangeRefresh({
-    table: "invites", // Assumes your table is named 'invites'
+    table: "invites", 
     channelName: "admin-invites-channel",
   });
 
@@ -55,8 +52,6 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
   const [roleId,     setRoleId]     = useState(1);
   const [roleOpen,   setRoleOpen]   = useState(false);
 
-  // Note: We still use initialInvites for fast first-paint, but router.refresh() 
-  // triggered by the LiveUpdatePill will fetch fresh data from the server automatically!
   const invites = initialInvites; 
   
   const [sending,  setSending]  = useState(false);
@@ -144,14 +139,14 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
   }
 
   return (
-    <div className="space-y-6 animate-fade-in relative">
+    <div className="space-y-4 sm:space-y-6 animate-fade-in relative w-full">
       
       {/* ✅ Place the live update pill at the top of the component */}
       <LiveUpdatePill show={pinged} />
 
       {/* ════ Send Invite Card ════════════════════════════════ */}
       <div className="card overflow-visible">
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+        <div className="px-4 sm:px-6 py-4 border-b border-slate-100 flex items-start sm:items-center gap-3 flex-col sm:flex-row">
           <div
             className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
             style={{ background: '#0D1A38' }}
@@ -163,13 +158,12 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
               Send an invite
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              The user gets a secure sign-up link by email.
-              Their role is applied automatically when they register.
+              The user gets a secure sign-up link by email. Their role is applied automatically when they register.
             </p>
           </div>
         </div>
 
-        <form onSubmit={sendInvite} className="p-6">
+        <form onSubmit={sendInvite} className="p-4 sm:p-6">
           {success && (
             <div className="flex items-start gap-3 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl px-4 py-3 text-sm mb-5 animate-fade-in">
               <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
@@ -189,7 +183,7 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
             <div>
               <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
                 Email address *
@@ -206,52 +200,52 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
                 />
               </div>
             </div>
-          </div>
 
-          <div className="mb-4">
-            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
-              Assign role *
-            </label>
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setRoleOpen(p => !p)}
-                className="w-full flex items-center justify-between px-4 py-2.5 border border-slate-300 rounded-xl bg-white text-sm font-medium text-slate-900 hover:border-slate-400 transition-colors text-left"
-              >
-                <span className="truncate pr-4">{selectedRole?.label}</span>
-                <ChevronDown
-                  className={`w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0 ${roleOpen ? 'rotate-180' : ''}`}
-                />
-              </button>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
+                Assign role *
+              </label>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setRoleOpen(p => !p)}
+                  className="w-full flex items-center justify-between px-4 py-2.5 border border-slate-300 rounded-xl bg-white text-sm font-medium text-slate-900 hover:border-slate-400 transition-colors text-left"
+                >
+                  <span className="truncate pr-4">{selectedRole?.label}</span>
+                  <ChevronDown
+                    className={`w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0 ${roleOpen ? 'rotate-180' : ''}`}
+                  />
+                </button>
 
-              {roleOpen && (
-                <div className="absolute z-30 top-full mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden">
-                  {ROLES.map(opt => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => {
-                        setRoleId(opt.value);
-                        setRoleOpen(false);
-                        clearFeedback();
-                      }}
-                      className={`w-full text-left px-4 py-3 transition-colors border-b border-slate-100 last:border-0 hover:bg-slate-50 ${roleId === opt.value ? 'bg-amber-50' : ''}`}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-sm font-semibold text-slate-900">{opt.label}</p>
-                          <p className="text-xs text-slate-500 mt-0.5">{opt.desc}</p>
-                        </div>
-                        {roleId === opt.value && (
-                          <div className="w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center shrink-0 mt-0.5">
-                            <CheckCircle2 className="w-3 h-3 text-white" />
+                {roleOpen && (
+                  <div className="absolute z-30 top-full mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden">
+                    {ROLES.map(opt => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => {
+                          setRoleId(opt.value);
+                          setRoleOpen(false);
+                          clearFeedback();
+                        }}
+                        className={`w-full text-left px-4 py-3 transition-colors border-b border-slate-100 last:border-0 hover:bg-slate-50 ${roleId === opt.value ? 'bg-amber-50' : ''}`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-semibold text-slate-900">{opt.label}</p>
+                            <p className="text-xs text-slate-500 mt-0.5 whitespace-normal">{opt.desc}</p>
                           </div>
-                        )}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
+                          {roleId === opt.value && (
+                            <div className="w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center shrink-0 mt-0.5">
+                              <CheckCircle2 className="w-3 h-3 text-white" />
+                            </div>
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -265,11 +259,11 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
             </p>
           </div>
 
-          <div className="flex justify-end mt-6">
+          <div className="flex justify-end mt-4 sm:mt-6">
             <button
               type="submit"
               disabled={sending}
-              className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-semibold text-white rounded-xl transition-all hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed shadow-sm"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-semibold text-white rounded-xl transition-all hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed shadow-sm active:scale-[0.98]"
               style={{ background: '#0D1A38' }}
             >
               {sending
@@ -284,13 +278,13 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
 
       {/* ════ Invite History Table ════════════════════════════ */}
       <div className="card overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+        <div className="px-4 sm:px-6 py-4 border-b border-slate-100 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-slate-900">Invite history</h3>
           <span className="text-xs text-slate-400">{invites.length} total</span>
         </div>
 
         {invites.length === 0 ? (
-          <div className="px-6 py-16 text-center">
+          <div className="px-4 sm:px-6 py-10 sm:py-16 text-center">
             <Mail className="w-10 h-10 text-slate-300 mx-auto mb-3" />
             <p className="text-sm font-medium text-slate-500">No invites sent yet</p>
             <p className="text-xs text-slate-400 mt-1">
@@ -299,15 +293,15 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
           </div>
         ) : (
           <div className="overflow-x-auto w-full">
-            <table className="data-table w-full text-left whitespace-nowrap">
+            <table className="data-table w-full text-left whitespace-nowrap min-w-[700px]">
               <thead>
                 <tr>
-                  <th>Email</th>
-                  <th>Role assigned</th>
-                  <th>Invited by</th>
-                  <th>Date sent</th>
-                  <th>Status</th>
-                  <th>Actions</th>
+                  <th className="px-4 sm:px-6 py-3">Email</th>
+                  <th className="px-4 sm:px-6 py-3">Role assigned</th>
+                  <th className="px-4 sm:px-6 py-3">Invited by</th>
+                  <th className="px-4 sm:px-6 py-3">Date sent</th>
+                  <th className="px-4 sm:px-6 py-3">Status</th>
+                  <th className="px-4 sm:px-6 py-3">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -315,16 +309,16 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
                   const cfg = STATUS[inv.status as InviteStatus] ?? STATUS.pending;
                   const inviter = Array.isArray(inv.profiles) ? inv.profiles[0] : inv.profiles;
                   
-                  const { Icon }    = cfg;
+                  const { Icon }  = cfg;
                   const isActioning = actionId === inv.id;
-                  const roleName    = inv.role_id === 2
+                  const roleName  = inv.role_id === 2
                     ? 'HOD / Coordinator'
                     : 'Lecturer / Student';
 
                   return (
-                    <tr key={inv.id}>
-                      <td className="font-medium text-slate-900">{inv.email}</td>
-                      <td>
+                    <tr key={inv.id} className="border-t border-slate-100">
+                      <td className="px-4 sm:px-6 py-3 font-medium text-slate-900">{inv.email}</td>
+                      <td className="px-4 sm:px-6 py-3">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
                             inv.role_id === 2
                               ? 'bg-amber-50 text-amber-700 border-amber-200'
@@ -334,15 +328,15 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
                           {roleName}
                         </span>
                       </td>
-                      <td className="text-slate-500">{inviter?.username ?? 'Admin'}</td>
-                      <td className="text-slate-500">{formatDateTime(inv.created_at)}</td>
-                      <td>
+                      <td className="px-4 sm:px-6 py-3 text-slate-500">{inviter?.username ?? 'Admin'}</td>
+                      <td className="px-4 sm:px-6 py-3 text-slate-500">{formatDateTime(inv.created_at)}</td>
+                      <td className="px-4 sm:px-6 py-3">
                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${cfg.cls}`}>
                           <Icon className="w-3 h-3" />
                           {cfg.label}
                         </span>
                       </td>
-                      <td>
+                      <td className="px-4 sm:px-6 py-3">
                         {inv.status === 'pending' && (
                           <div className="flex items-center gap-2">
                             <button

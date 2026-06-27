@@ -55,14 +55,14 @@ export default function DashboardRealtime({
   ];
 
   return (
-    <div>
+    <div className="w-full">
       <LiveUpdatePill show={pinged} />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 sm:mb-8 w-full">
         {statCards.map((s) => {
           const Icon = s.icon;
           return (
-            <div key={s.label} className="stat-card animate-slide-up">
+            <div key={s.label} className="stat-card animate-slide-up w-full p-4 sm:p-5">
               <div className={`w-10 h-10 rounded-xl ${s.bg} flex items-center justify-center mb-3`}>
                 <Icon className={`w-5 h-5 ${s.color}`} />
               </div>
@@ -74,42 +74,42 @@ export default function DashboardRealtime({
       </div>
 
       {isStaff && pendingAll > 0 && (
-        <div className="mb-6 flex items-center justify-between bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 animate-slide-up">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">
+        <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0 bg-amber-50 border border-amber-200 rounded-2xl p-4 sm:px-5 sm:py-4 animate-slide-up w-full">
+          <div className="flex items-start sm:items-center gap-3 w-full">
+            <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
               <Clock className="w-4 h-4 text-amber-600" />
             </div>
-            <div>
-              <p className="text-sm font-semibold text-amber-800">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-amber-800 break-words">
                 {pendingAll} booking{pendingAll > 1 ? "s" : ""} awaiting your approval
               </p>
-              <p className="text-xs text-amber-600">
+              <p className="text-xs text-amber-600 break-words mt-0.5 sm:mt-0">
                 Review and take action from the Approvals page
               </p>
             </div>
           </div>
           <Link
             href="/approvals"
-            className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 hover:text-amber-900 transition-colors"
+            className="flex items-center justify-end sm:justify-start gap-1.5 text-sm sm:text-xs font-semibold text-amber-700 hover:text-amber-900 transition-colors w-full sm:w-auto mt-2 sm:mt-0 active:scale-[0.98]"
           >
-            Review <ArrowRight className="w-3 h-3" />
+            Review <ArrowRight className="w-3 sm:w-4 h-3 sm:h-4" />
           </Link>
         </div>
       )}
 
-      <div className="card overflow-hidden animate-slide-up">
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-          <h2 className="font-display font-semibold text-slate-900">Recent Bookings</h2>
+      <div className="card overflow-hidden animate-slide-up w-full">
+        <div className="px-4 sm:px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+          <h2 className="font-display font-semibold text-slate-900 text-base sm:text-lg">Recent Bookings</h2>
           <Link
             href="/bookings"
-            className="text-xs font-semibold text-slate-500 hover:text-slate-800 flex items-center gap-1"
+            className="text-xs font-semibold text-slate-500 hover:text-slate-800 flex items-center gap-1 active:scale-[0.98]"
           >
             View all <ArrowRight className="w-3 h-3" />
           </Link>
         </div>
 
         {recent.length === 0 ? (
-          <div className="px-6 py-16 text-center">
+          <div className="px-4 sm:px-6 py-12 sm:py-16 text-center w-full">
             <CalendarDays className="w-10 h-10 text-slate-300 mx-auto mb-3" />
             <p className="text-sm text-slate-500 font-medium">No bookings yet</p>
             <p className="text-xs text-slate-400 mt-1">
@@ -117,42 +117,44 @@ export default function DashboardRealtime({
             </p>
             <Link
               href="/bookings/new"
-              className="inline-flex items-center gap-2 mt-4 px-4 py-2 text-sm font-semibold rounded-xl text-white transition-colors"
+              className="inline-flex items-center justify-center gap-2 mt-4 px-5 py-2.5 sm:py-2 text-sm font-semibold rounded-xl text-white transition-colors active:scale-[0.98] w-full sm:w-auto"
               style={{ background: "#0D1A38" }}
             >
-              <CalendarPlus className="w-4 h-4" /> New Booking
+              <CalendarPlus className="w-4 h-4 shrink-0" /> New Booking
             </Link>
           </div>
         ) : (
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Event</th>
-                <th>Venue</th>
-                <th>Date & Time</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-             {recent.map((ev) => {
-    // Normalize the venue object
-    const venue = Array.isArray(ev.venues) ? ev.venues[0] : ev.venues;
+          <div className="overflow-x-auto w-full">
+            <table className="data-table w-full text-left whitespace-nowrap min-w-[600px]">
+              <thead>
+                <tr>
+                  <th className="px-4 sm:px-6 py-3">Event</th>
+                  <th className="px-4 sm:px-6 py-3">Venue</th>
+                  <th className="px-4 sm:px-6 py-3">Date & Time</th>
+                  <th className="px-4 sm:px-6 py-3">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+               {recent.map((ev) => {
+                // Normalize the venue object
+                const venue = Array.isArray(ev.venues) ? ev.venues[0] : ev.venues;
 
-    return (
-      <tr key={ev.id}>
-        <td className="font-medium text-slate-900">{ev.title}</td>
-        <td className="text-slate-500">{venue?.name ?? "—"}</td>
-        <td className="text-slate-500 whitespace-nowrap">
-          {formatDateTime(ev.start_time)}
-        </td>
-        <td>
-          <StatusBadge status={ev.status} />
-        </td>
-      </tr>
-    );
-  })}
-            </tbody>
-          </table>
+                return (
+                  <tr key={ev.id} className="border-t border-slate-100">
+                    <td className="px-4 sm:px-6 py-3 font-medium text-slate-900">{ev.title}</td>
+                    <td className="px-4 sm:px-6 py-3 text-slate-500">{venue?.name ?? "—"}</td>
+                    <td className="px-4 sm:px-6 py-3 text-slate-500 whitespace-nowrap">
+                      {formatDateTime(ev.start_time)}
+                    </td>
+                    <td className="px-4 sm:px-6 py-3">
+                      <StatusBadge status={ev.status} />
+                    </td>
+                  </tr>
+                );
+              })}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

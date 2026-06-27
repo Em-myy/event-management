@@ -58,23 +58,23 @@ export default function AdminTabs({
   const [tab, setTab] = useState("venues");
 
   return (
-    <div>
+    <div className="w-full">
       {/* Tab bar */}
-      <div className="flex flex-wrap sm:flex-nowrap gap-1 bg-slate-200 p-1 rounded-xl mb-6 w-full sm:w-fit">
+      <div className="flex overflow-x-auto gap-1 bg-slate-200 p-1 rounded-xl mb-6 w-full min-w-0 hide-scrollbar">
         {TABS.map(t => {
           const Icon = t.icon;
           return (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`flex flex-1 sm:flex-none items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-150 cursor-pointer ${
+              className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-150 cursor-pointer whitespace-nowrap shrink-0 ${
                 tab === t.id
                   ? 'bg-white text-slate-900 shadow-sm'
                   : 'text-slate-500 hover:text-slate-700 hover:bg-slate-300/50'
               }`}
             >
               <Icon className="w-4 h-4 shrink-0" />
-              <span className="truncate">{t.label}</span>
+              <span>{t.label}</span>
             </button>
           );
         })}
@@ -180,10 +180,10 @@ function VenuesTab({ initial }: { initial: Venue[] }) {
   }
 
   return (
-    <div>
+    <div className="w-full animate-fade-in">
       <div className="flex justify-end mb-4">
         <button onClick={() => setEditing(blank)}
-          className="flex items-center justify-center gap-2 cursor-pointer px-4 py-2 text-sm font-semibold text-white rounded-xl shadow-sm hover:opacity-90 w-full sm:w-auto"
+          className="flex items-center justify-center gap-2 cursor-pointer px-4 py-2 text-sm font-semibold text-white rounded-xl shadow-sm hover:opacity-90 w-full sm:w-auto active:scale-[0.98] transition-all"
           style={{ background: '#0D1A38' }}>
           <Plus className="w-4 h-4" /> Add Venue
         </button>
@@ -191,17 +191,20 @@ function VenuesTab({ initial }: { initial: Venue[] }) {
 
       <div className="card overflow-hidden">
         <div className="overflow-x-auto w-full">
-          <table className="data-table w-full text-left whitespace-nowrap">
+          <table className="data-table w-full text-left whitespace-nowrap min-w-[700px]">
             <thead>
               <tr>
-                <th>Name</th><th>Location</th><th>Capacity</th>
-                <th>Status</th><th>Actions</th>
+                <th className="px-4 sm:px-6 py-3">Name</th>
+                <th className="px-4 sm:px-6 py-3">Location</th>
+                <th className="px-4 sm:px-6 py-3">Capacity</th>
+                <th className="px-4 sm:px-6 py-3">Status</th>
+                <th className="px-4 sm:px-6 py-3">Actions</th>
               </tr>
             </thead>
             <tbody>
               {items.map(v => (
-                <tr key={v.id}>
-                  <td className="font-medium text-slate-900">
+                <tr key={v.id} className="border-t border-slate-100">
+                  <td className="px-4 sm:px-6 py-3 font-medium text-slate-900">
                     {v.name}
                     {v.description && (
                       <div className="text-xs text-slate-400 font-normal mt-0.5 truncate max-w-[200px] sm:max-w-xs">
@@ -209,9 +212,9 @@ function VenuesTab({ initial }: { initial: Venue[] }) {
                       </div>
                     )}
                   </td>
-                  <td className="text-slate-500">{v.location || '—'}</td>
-                  <td>{v.capacity}</td>
-                  <td>
+                  <td className="px-4 sm:px-6 py-3 text-slate-500">{v.location || '—'}</td>
+                  <td className="px-4 sm:px-6 py-3">{v.capacity}</td>
+                  <td className="px-4 sm:px-6 py-3">
                     <button onClick={() => toggleActive(v)}
                       className={`text-xs font-semibold px-2.5 py-1 rounded-full border cursor-pointer transition-colors ${
                         v.is_active
@@ -221,7 +224,7 @@ function VenuesTab({ initial }: { initial: Venue[] }) {
                       {v.is_active ? 'Active' : 'Inactive'}
                     </button>
                   </td>
-                  <td>
+                  <td className="px-4 sm:px-6 py-3">
                     <div className="flex items-center gap-2">
                       <button onClick={() => setEditing(v)}
                         className="p-1.5 cursor-pointer rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all">
@@ -361,10 +364,10 @@ function ResourcesTab({ initial }: { initial: Resource[] }) {
   };
 
   return (
-    <div>
+    <div className="w-full animate-fade-in">
       <div className="flex justify-end mb-4">
         <button onClick={() => setEditing(blank)}
-          className="flex items-center justify-center gap-2 cursor-pointer px-4 py-2 text-sm font-semibold text-white rounded-xl shadow-sm hover:opacity-90 w-full sm:w-auto"
+          className="flex items-center justify-center gap-2 cursor-pointer px-4 py-2 text-sm font-semibold text-white rounded-xl shadow-sm hover:opacity-90 w-full sm:w-auto active:scale-[0.98] transition-all"
           style={{ background: '#0D1A38' }}>
           <Plus className="w-4 h-4" /> Add Resource
         </button>
@@ -372,17 +375,20 @@ function ResourcesTab({ initial }: { initial: Resource[] }) {
 
       <div className="card overflow-hidden">
         <div className="overflow-x-auto w-full">
-          <table className="data-table w-full text-left whitespace-nowrap">
+          <table className="data-table w-full text-left whitespace-nowrap min-w-[700px]">
             <thead>
               <tr>
-                <th>Name</th><th>Total Qty</th><th>Condition</th>
-                <th>Status</th><th>Actions</th>
+                <th className="px-4 sm:px-6 py-3">Name</th>
+                <th className="px-4 sm:px-6 py-3">Total Qty</th>
+                <th className="px-4 sm:px-6 py-3">Condition</th>
+                <th className="px-4 sm:px-6 py-3">Status</th>
+                <th className="px-4 sm:px-6 py-3">Actions</th>
               </tr>
             </thead>
             <tbody>
               {items.map(r => (
-                <tr key={r.id}>
-                  <td className="font-medium text-slate-900">
+                <tr key={r.id} className="border-t border-slate-100">
+                  <td className="px-4 sm:px-6 py-3 font-medium text-slate-900">
                     {r.name}
                     {r.description && (
                       <div className="text-xs text-slate-400 font-normal mt-0.5 truncate max-w-[200px] sm:max-w-xs">
@@ -390,13 +396,13 @@ function ResourcesTab({ initial }: { initial: Resource[] }) {
                       </div>
                     )}
                   </td>
-                  <td>{r.total_quantity}</td>
-                  <td>
+                  <td className="px-4 sm:px-6 py-3">{r.total_quantity}</td>
+                  <td className="px-4 sm:px-6 py-3">
                     <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${conditionColor[r.condition!] ?? conditionColor.Good}`}>
                       {r.condition}
                     </span>
                   </td>
-                  <td>
+                  <td className="px-4 sm:px-6 py-3">
                     <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${
                       r.is_active
                         ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
@@ -405,7 +411,7 @@ function ResourcesTab({ initial }: { initial: Resource[] }) {
                       {r.is_active ? 'Active' : 'Inactive'}
                     </span>
                   </td>
-                  <td>
+                  <td className="px-4 sm:px-6 py-3">
                     <div className="flex items-center gap-2">
                       <button onClick={() => setEditing(r)}
                         className="p-1.5 cursor-pointer rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all">
@@ -496,20 +502,22 @@ function UsersTab({ initial }: { initial: Profile[] }) {
   }
 
   return (
-    <div className="card overflow-hidden">
+    <div className="card overflow-hidden w-full animate-fade-in">
       <div className="overflow-x-auto w-full">
-        <table className="data-table w-full text-left whitespace-nowrap">
+        <table className="data-table w-full text-left whitespace-nowrap min-w-[600px]">
           <thead>
             <tr>
-              <th>Name</th><th>Email</th><th>Role Assignment</th>
+              <th className="px-4 sm:px-6 py-3">Name</th>
+              <th className="px-4 sm:px-6 py-3">Email</th>
+              <th className="px-4 sm:px-6 py-3">Role Assignment</th>
             </tr>
           </thead>
           <tbody>
             {users.map(u => {
               const isMe = currentUser?.id === u.id;
               return (
-              <tr key={u.id}>
-                <td className="font-medium text-slate-900">
+              <tr key={u.id} className="border-t border-slate-100">
+                <td className="px-4 sm:px-6 py-3 font-medium text-slate-900">
                   {u.username || '—'}
                   {isMe && (
                       <span className="ml-3 text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
@@ -517,8 +525,8 @@ function UsersTab({ initial }: { initial: Profile[] }) {
                       </span>
                     )}
                   </td>
-                <td className="text-slate-500">{u.email}</td>
-                <td>
+                <td className="px-4 sm:px-6 py-3 text-slate-500">{u.email}</td>
+                <td className="px-4 sm:px-6 py-3">
                   <div className="flex items-center gap-2">
                       {authLoading ? (
                         // ✅ Show a tiny spinner while we figure out who is logged in
@@ -533,7 +541,7 @@ function UsersTab({ initial }: { initial: Profile[] }) {
                         <select
                           value={u.role_id || 1}
                           onChange={e => updateRole(u.id, e.target.value)}
-                          className="text-xs px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-700 font-semibold outline-none cursor-pointer hover:border-slate-400 transition-colors"
+                          className="text-xs px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-700 font-semibold outline-none cursor-pointer hover:border-slate-400 transition-colors w-full sm:w-auto"
                         >
                           <option value={1}>General User</option>
                           <option value={2}>HOD / Coordinator</option>
@@ -543,7 +551,7 @@ function UsersTab({ initial }: { initial: Profile[] }) {
                       
                       {/* This is your existing spinner for the database update */}
                       {loading[u.id] && (
-                        <Loader2 className="w-3.5 h-3.5 text-slate-400 animate-spin" />
+                        <Loader2 className="w-3.5 h-3.5 text-slate-400 animate-spin shrink-0" />
                       )}
                     </div>
                 </td>
@@ -606,20 +614,20 @@ function AllBookingsTab({ initial }: { initial: AdminBooking[] }) {
   };
 
   return (
-    <div>
+    <div className="w-full animate-fade-in">
       <LiveUpdatePill show={pinged} />
 
       {/* Search + filter row */}
-      <div className="flex flex-wrap items-center gap-3 mb-4">
-        <div className="relative flex-1 min-w-[200px]">
+      <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 mb-4 w-full">
+        <div className="relative flex-1 w-full sm:w-auto min-w-[200px]">
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by title, requester, or venue..."
-            className="field-input !pl-9 text-xs"
+            className="field-input !pl-9 text-xs w-full"
           />
           <svg
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"
             fill="none" stroke="currentColor" viewBox="0 0 24 24"
           >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -658,7 +666,7 @@ function AllBookingsTab({ initial }: { initial: AdminBooking[] }) {
 
       {/* No bookings at all in the system */}
       {initial.length === 0 && (
-        <div className="card px-6 py-16 text-center">
+        <div className="card px-4 sm:px-6 py-10 sm:py-16 text-center w-full">
           <CalendarDays className="w-10 h-10 text-slate-300 mx-auto mb-3" />
           <p className="text-sm font-medium text-slate-500">
             No bookings in the system yet
@@ -671,7 +679,7 @@ function AllBookingsTab({ initial }: { initial: AdminBooking[] }) {
 
       {/* Bookings exist but search/filter returned nothing */}
       {initial.length > 0 && filtered.length === 0 && (
-        <div className="card px-6 py-16 text-center">
+        <div className="card px-4 sm:px-6 py-10 sm:py-16 text-center w-full">
           <CalendarDays className="w-10 h-10 text-slate-300 mx-auto mb-3" />
           <p className="text-sm font-medium text-slate-500">
             No bookings match your filter
@@ -687,37 +695,37 @@ function AllBookingsTab({ initial }: { initial: AdminBooking[] }) {
 
       {/* Booking cards */}
       {filtered.length > 0 && (
-        <div className="space-y-4">
+        <div className="space-y-4 w-full">
           {filtered.map((bk) => {
             const requester = Array.isArray(bk.profiles) ? bk.profiles[0] : bk.profiles;
             const resources = bk.event_resources ?? [];
             const venue = Array.isArray(bk.venues) ? bk.venues[0] : bk.venues;
             return (
-              <div key={bk.id} className="card p-5">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
+              <div key={bk.id} className="card p-4 sm:p-5 w-full">
+                <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0 w-full">
 
                     {/* Title + status */}
-                    <div className="flex items-center gap-3 mb-2 flex-wrap">
-                      <h3 className="font-display font-bold text-slate-900 text-base truncate">
+                    <div className="flex items-center gap-3 mb-2 flex-wrap w-full">
+                      <h3 className="font-display font-bold text-slate-900 text-base break-words min-w-0">
                         {bk.title}
                       </h3>
                       <StatusBadge status={bk.status} />
                     </div>
 
                     {bk.description && (
-                      <p className="text-sm text-slate-500 mb-3 line-clamp-1">
+                      <p className="text-sm text-slate-500 mb-3 line-clamp-1 w-full break-words">
                         {bk.description}
                       </p>
                     )}
 
                     {/* Meta */}
-                    <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-slate-500 mb-2">
-                      <span>
+                    <div className="flex flex-wrap gap-x-4 sm:gap-x-5 gap-y-2 text-xs text-slate-500 mb-2">
+                      <span className="break-words">
                         <span className="font-semibold text-slate-700">Submitted by:</span>{" "}
                         {requester?.username ?? "—"}
                         {requester?.email && (
-                          <span className="text-slate-400"> · {requester.email}</span>
+                          <span className="text-slate-400 hidden sm:inline"> · {requester.email}</span>
                         )}
                       </span>
                       <span>
@@ -736,7 +744,7 @@ function AllBookingsTab({ initial }: { initial: AdminBooking[] }) {
 
                     {/* Resources */}
                     {resources.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mb-2">
+                      <div className="flex flex-wrap gap-1.5 mb-2 mt-1">
                         {resources.map((r, idx) => {
                            const resObj = Array.isArray(r.resources) ? r.resources[0] : r.resources;
                            return (
@@ -753,20 +761,22 @@ function AllBookingsTab({ initial }: { initial: AdminBooking[] }) {
 
                     {/* Rejection reason */}
                     {bk.status === "rejected" && bk.rejection_reason && (
-                      <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2 mb-2">
+                      <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2 mb-2 w-full break-words">
                         <span className="font-semibold">Rejection reason:</span>{" "}
                         {bk.rejection_reason}
                       </p>
                     )}
 
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-slate-400 mt-2">
                       Submitted {formatDateTime(bk.created_at)}
                     </p>
                   </div>
 
                   {/* Approve / Reject only for pending */}
                   {bk.status === "pending" && (
-                    <ApprovalButtons bookingId={bk.id} />
+                    <div className="w-full sm:w-auto mt-2 sm:mt-0">
+                      <ApprovalButtons bookingId={bk.id} />
+                    </div>
                   )}
                 </div>
               </div>
@@ -781,8 +791,6 @@ function AllBookingsTab({ initial }: { initial: AdminBooking[] }) {
 /* ═══════════════════════════════════════════════════════════════
    REUSABLE FORM MODAL
 ═══════════════════════════════════════════════════════════════ */
-// ... (The FormModal component remains entirely unchanged from your previous code) ...
-
 interface FormField {
   key: string;
   label: string;
@@ -803,14 +811,14 @@ function FormModal({ title, fields, data, loading, onSave, onClose }: FormModalP
   const [form, setForm] = useState({ ...data });
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4 sm:p-6"
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4 sm:p-6 w-full"
       onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 animate-slide-up max-h-full overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-4 sm:p-6 animate-slide-up max-h-full overflow-y-auto">
 
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="font-display font-bold text-slate-900 text-lg">{title}</h3>
+        <div className="flex items-center justify-between mb-5 sm:mb-6">
+          <h3 className="font-display font-bold text-slate-900 text-lg sm:text-xl break-words">{title}</h3>
           <button onClick={onClose}
-            className="p-1.5 cursor-pointer rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all">
+            className="p-1.5 cursor-pointer rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all shrink-0">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -824,13 +832,13 @@ function FormModal({ title, fields, data, loading, onSave, onClose }: FormModalP
               {f.type === 'select' ? (
                 <select value={form[f.key] ?? ''}
                   onChange={e => setForm((p: any) => ({ ...p, [f.key]: e.target.value }))}
-                  className="field-input w-full p-2 border rounded">
+                  className="field-input w-full p-2.5 sm:p-2 border rounded text-sm sm:text-base">
                   {f.options?.map(o => <option key={o} value={o}>{o}</option>)}
                 </select>
               ) : (
                 <input type={f.type} value={form[f.key] ?? ''}
                   onChange={e => setForm((p: any) => ({ ...p, [f.key]: e.target.value }))}
-                  className="field-input w-full p-2 border rounded" />
+                  className="field-input w-full p-2.5 sm:p-2 border rounded text-sm sm:text-base" />
               )}
             </div>
           ))}
@@ -845,13 +853,13 @@ function FormModal({ title, fields, data, loading, onSave, onClose }: FormModalP
           )}
         </div>
 
-        <div className="flex flex-col-reverse sm:flex-row gap-3 mt-8">
+        <div className="flex flex-col-reverse sm:flex-row gap-3 mt-6 sm:mt-8">
           <button onClick={onClose}
-            className="flex-1 py-2.5 cursor-pointer text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">
+            className="flex-1 py-3 sm:py-2.5 cursor-pointer text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors active:scale-[0.98]">
             Cancel
           </button>
           <button onClick={() => onSave(form)} disabled={loading}
-            className="flex-1 py-2.5 cursor-pointer text-sm font-semibold text-white rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+            className="flex-1 py-3 sm:py-2.5 cursor-pointer text-sm font-semibold text-white rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 active:scale-[0.98]"
             style={{ background: '#0D1A38' }}>
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             Save

@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { Check, X, Loader2, AlertCircle } from "lucide-react";
-import ConfirmModal from "@/components/ConfirmModal"; // ✅ Import reusable modal
+import ConfirmModal from "@/components/ConfirmModal"; 
 
 interface ApprovalButtonsProps {
   bookingId: string;
@@ -13,8 +13,8 @@ interface ApprovalButtonsProps {
 
 export default function ApprovalButtons({ bookingId }: ApprovalButtonsProps) {
   const [loading, setLoading] = useState(false);
-  const [showApproveModal, setShowApproveModal] = useState(false); // ✅ Approve Modal State
-  const [showRejectModal, setShowRejectModal] = useState(false);   // ✅ Reject Modal State
+  const [showApproveModal, setShowApproveModal] = useState(false); 
+  const [showRejectModal, setShowRejectModal] = useState(false);   
   const [reason, setReason] = useState("");
   const [error, setError] = useState("");
   const [mounted, setMounted] = useState(false);
@@ -81,40 +81,40 @@ export default function ApprovalButtons({ bookingId }: ApprovalButtonsProps) {
   // ✅ Extracted Reject Modal Content for Portal
   const rejectModalContent = (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-fade-in"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 sm:p-6 w-full animate-fade-in"
       onClick={(e) => e.target === e.currentTarget && setShowRejectModal(false)}
     >
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 animate-slide-up">
-        <div className="flex items-center gap-3 mb-4 text-red-600">
-          <div className="p-2 rounded-full bg-red-50 shrink-0">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-5 sm:p-6 animate-slide-up">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4 text-red-600">
+          <div className="p-2 rounded-full bg-red-50 shrink-0 self-start sm:self-auto hidden sm:block">
             <AlertCircle className="w-6 h-6 text-red-500" />
           </div>
           <div>
-            <h3 className="text-lg font-bold leading-tight text-red-600">
+            <h3 className="text-lg sm:text-xl font-bold leading-tight text-red-600 break-words">
               Reject Booking
             </h3>
-            <p className="text-xs text-slate-500 font-normal mt-0.5">
+            <p className="text-xs sm:text-sm text-slate-500 font-normal mt-0.5 break-words">
               Provide a reason for the requester
             </p>
           </div>
         </div>
 
         {error && (
-          <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 rounded-lg px-3 py-2 text-sm mb-4">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            {error}
+          <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 rounded-lg px-3 py-2 text-sm mb-4">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            <span className="break-words flex-1">{error}</span>
           </div>
         )}
 
         <textarea
           value={reason}
           onChange={(e) => setReason(e.target.value)}
-          placeholder="e.g. Venue unavailable due to maintenance, please choose another date..."
+          placeholder="e.g. Venue unavailable due to maintenance..."
           rows={3}
-          className="field-input resize-none w-full mb-6 border-slate-300 rounded-xl"
+          className="field-input resize-none w-full mb-6 border-slate-300 rounded-xl text-sm sm:text-base p-3"
         />
 
-        <div className="flex gap-3">
+        <div className="flex flex-col-reverse sm:flex-row gap-3">
           <button
             onClick={() => {
               setShowRejectModal(false);
@@ -122,14 +122,14 @@ export default function ApprovalButtons({ bookingId }: ApprovalButtonsProps) {
               setError("");
             }}
             disabled={loading}
-            className="flex-1 px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors disabled:opacity-50"
+            className="flex-1 py-3 sm:py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors disabled:opacity-50 active:scale-[0.98]"
           >
             Cancel
           </button>
           <button
             onClick={executeReject}
             disabled={!reason.trim() || loading}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-all disabled:opacity-50"
+            className="flex-1 flex items-center justify-center gap-2 py-3 sm:py-2.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-all disabled:opacity-50 active:scale-[0.98]"
           >
             {loading && <Loader2 className="w-4 h-4 animate-spin" />}
             Reject Booking
@@ -141,11 +141,11 @@ export default function ApprovalButtons({ bookingId }: ApprovalButtonsProps) {
 
   return (
     <>
-      <div className="flex flex-col gap-2 shrink-0">
+      <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2 sm:gap-3 shrink-0">
         {error && !showRejectModal && !showApproveModal && (
-          <div className="flex items-start gap-1.5 text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-2.5 py-1.5 max-w-[180px]">
+          <div className="flex items-start gap-1.5 text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-2.5 py-1.5 w-full sm:max-w-[180px]">
             <AlertCircle className="w-3 h-3 shrink-0 mt-0.5" />
-            <span>{error}</span>
+            <span className="break-words">{error}</span>
           </div>
         )}
         
@@ -153,7 +153,7 @@ export default function ApprovalButtons({ bookingId }: ApprovalButtonsProps) {
         <button
           onClick={() => setShowApproveModal(true)}
           disabled={loading}
-          className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl transition-all disabled:opacity-50"
+          className="flex items-center justify-center w-full sm:w-auto gap-1.5 px-4 sm:px-3.5 py-3 sm:py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl transition-all disabled:opacity-50 active:scale-[0.98]"
         >
           <Check className="w-4 h-4" />
           Approve
@@ -166,14 +166,14 @@ export default function ApprovalButtons({ bookingId }: ApprovalButtonsProps) {
             setError("");
           }}
           disabled={loading}
-          className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 text-sm font-semibold rounded-xl border border-red-200 transition-all disabled:opacity-50"
+          className="flex items-center justify-center w-full sm:w-auto gap-1.5 px-4 sm:px-3.5 py-3 sm:py-2.5 bg-red-50 hover:bg-red-100 text-red-600 text-sm font-semibold rounded-xl border border-red-200 transition-all disabled:opacity-50 active:scale-[0.98]"
         >
           <X className="w-4 h-4" />
           Reject
         </button>
       </div>
 
-      {/* ✅ Reusable Confirm Modal for Approval (Type = Success) */}
+    
       <ConfirmModal
         isOpen={showApproveModal}
         onClose={() => setShowApproveModal(false)}
@@ -186,7 +186,7 @@ export default function ApprovalButtons({ bookingId }: ApprovalButtonsProps) {
         loading={loading}
       />
 
-      {/* ✅ Custom Portal Modal for Rejection */}
+      
       {showRejectModal && mounted && createPortal(rejectModalContent, document.body)}
     </>
   );

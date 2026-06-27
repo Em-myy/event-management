@@ -17,8 +17,6 @@ import {
   Users,
   Info,
 } from "lucide-react";
-
-// ✅ Safely import the type from the centralized queries file
 import type { EditableBooking } from "@/utils/queries";
 
 /* ── Step definitions ─────────────────────────────────────── */
@@ -283,21 +281,21 @@ export default function BookingWizard({
   /* ── Success screen ───────────────────────────────────────── */
   if (submitted) {
     return (
-      <div className="card p-8 sm:p-12 text-center max-w-md mx-auto animate-fade-in">
+      <div className="card p-6 sm:p-12 text-center max-w-md mx-auto animate-fade-in w-full">
         <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-5">
           <Check className="w-8 h-8 text-emerald-600" />
         </div>
-        <h2 className="font-display text-2xl font-bold text-slate-900 mb-2">
+        <h2 className="font-display text-xl sm:text-2xl font-bold text-slate-900 mb-2">
           {isEdit ? "Booking Updated!" : "Booking Submitted!"}
         </h2>
-        <p className="text-slate-500 text-sm mb-8">
+        <p className="text-slate-500 text-sm mb-8 px-2 sm:px-0">
           {isEdit
             ? "Your booking has been updated and is pending approval again."
             : "Your request is now pending approval from an HOD or Event Coordinator."}
         </p>
         <button
           onClick={() => router.push("/bookings")}
-          className="w-full sm:w-auto px-6 py-3 text-sm font-semibold text-white rounded-xl transition-opacity hover:opacity-90"
+          className="w-full sm:w-auto px-6 py-3.5 sm:py-3 text-sm font-semibold text-white rounded-xl transition-all hover:opacity-90 active:scale-[0.98]"
           style={{ background: "#0D1A38" }}
         >
           View My Bookings
@@ -307,12 +305,12 @@ export default function BookingWizard({
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-2xl mx-auto w-full">
       {/* Edit mode notice */}
       {isEdit && (
-        <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-5 text-sm text-amber-800 animate-fade-in">
+        <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-5 text-sm text-amber-800 animate-fade-in w-full">
           <Info className="w-4 h-4 mt-0.5 shrink-0 text-amber-500" />
-          <div>
+          <div className="break-words">
             <span className="font-semibold">Editing a pending booking.</span>
             {" "}Saving changes will reset its status back to{" "}
             <span className="font-semibold">Pending</span> so it can be
@@ -322,7 +320,7 @@ export default function BookingWizard({
       )}
 
       {/* Step indicator */}
-      <div className="card p-4 sm:p-6 mb-6">
+      <div className="card p-4 sm:p-6 mb-6 w-full">
         <div className="flex items-center justify-between relative px-2 sm:px-0">
           <div className="absolute left-0 right-0 top-4 h-0.5 bg-slate-200 -z-0" />
           <div
@@ -353,13 +351,13 @@ export default function BookingWizard({
 
       {/* Error */}
       {error && (
-        <div className="mb-4 flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm animate-fade-in">
+        <div className="mb-4 flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm animate-fade-in w-full">
           <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-          {error}
+          <span className="break-words">{error}</span>
         </div>
       )}
 
-      <div className="card p-5 sm:p-7 animate-fade-in">
+      <div className="card p-4 sm:p-7 animate-fade-in w-full">
         {step === 1 && (
           <Step1
             details={details}
@@ -423,7 +421,7 @@ function Step1({
   const today = format(new Date(), "yyyy-MM-dd");
 
   return (
-    <div>
+    <div className="w-full">
       <SectionHeader
         icon={<CalendarDays className="w-5 h-5" />}
         title="Event Details"
@@ -432,7 +430,7 @@ function Step1({
       <div className="space-y-4 mt-6">
         <FormField label="Event Title *">
           <input
-            className="field-input w-full p-2 border rounded"
+            className="field-input w-full p-3 sm:p-2.5 border rounded-xl text-sm sm:text-base"
             value={details.title}
             onChange={(e) => set("title", e.target.value)}
             placeholder="e.g. Annual Tech Symposium"
@@ -440,7 +438,7 @@ function Step1({
         </FormField>
         <FormField label="Description">
           <textarea
-            className="field-input min-h-[80px] resize-none w-full p-2 border rounded"
+            className="field-input min-h-[100px] sm:min-h-[80px] resize-none w-full p-3 sm:p-2.5 border rounded-xl text-sm sm:text-base"
             value={details.description}
             onChange={(e) => set("description", e.target.value)}
             placeholder="Brief description of the event..."
@@ -449,7 +447,7 @@ function Step1({
         </FormField>
         <FormField label="Date *">
           <input
-            className="field-input w-full p-2 border rounded"
+            className="field-input w-full p-3 sm:p-2.5 border rounded-xl text-sm sm:text-base"
             type="date"
             min={today}
             value={details.date}
@@ -459,7 +457,7 @@ function Step1({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FormField label="Start Time *">
             <input
-              className="field-input w-full p-2 border rounded"
+              className="field-input w-full p-3 sm:p-2.5 border rounded-xl text-sm sm:text-base"
               type="time"
               value={details.start_time}
               onChange={(e) => set("start_time", e.target.value)}
@@ -467,7 +465,7 @@ function Step1({
           </FormField>
           <FormField label="End Time *">
             <input
-              className="field-input w-full p-2 border rounded"
+              className="field-input w-full p-3 sm:p-2.5 border rounded-xl text-sm sm:text-base"
               type="time"
               value={details.end_time}
               onChange={(e) => set("end_time", e.target.value)}
@@ -497,7 +495,7 @@ function Step2({
   loading:     boolean;
 }) {
   return (
-    <div>
+    <div className="w-full">
       <SectionHeader
         icon={<MapPin className="w-5 h-5" />}
         title="Select Venue"
@@ -508,7 +506,7 @@ function Step2({
         }
       />
       {venues.length === 0 ? (
-        <div className="mt-6 text-center py-10 bg-slate-50 rounded-xl border border-slate-200">
+        <div className="mt-6 text-center py-10 bg-slate-50 rounded-xl border border-slate-200 px-4">
           <MapPin className="w-8 h-8 text-slate-300 mx-auto mb-2" />
           <p className="text-sm text-slate-500">
             All venues are booked for this slot. Please go back and choose
@@ -521,7 +519,7 @@ function Step2({
             <button
               key={v.id}
               onClick={() => setSelected(v)}
-              className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
+              className={`w-full text-left p-4 rounded-xl border-2 transition-all active:scale-[0.99] ${
                 selected?.id === v.id
                   ? "border-amber-500 bg-amber-50"
                   : "border-slate-200 hover:border-slate-300 bg-white"
@@ -529,14 +527,14 @@ function Step2({
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <div className="font-semibold text-slate-900 truncate">{v.name}</div>
-                  <div className="text-xs text-slate-500 mt-0.5 truncate">{v.location}</div>
+                  <div className="font-semibold text-slate-900 truncate text-sm sm:text-base">{v.name}</div>
+                  <div className="text-xs sm:text-sm text-slate-500 mt-0.5 truncate">{v.location}</div>
                   {v.description && (
                     <div className="text-xs text-slate-400 mt-1 line-clamp-2">{v.description}</div>
                   )}
                 </div>
                 <div className="flex flex-col items-end gap-1 shrink-0">
-                  <div className="flex items-center gap-1 text-xs font-semibold text-slate-600 bg-slate-100 px-2 py-1 rounded-lg">
+                  <div className="flex items-center gap-1 text-[10px] sm:text-xs font-semibold text-slate-600 bg-slate-100 px-2 py-1 rounded-lg">
                     <Users className="w-3 h-3 shrink-0" /> {v.capacity}
                   </div>
                   {selected?.id === v.id && (
@@ -577,7 +575,7 @@ function Step3({
     setResources((r) => r.map((x) => (x.id === id ? { ...x, qty } : x)));
 
   return (
-    <div>
+    <div className="w-full">
       <SectionHeader
         icon={<Package className="w-5 h-5" />}
         title="Resource Allocation"
@@ -587,7 +585,7 @@ function Step3({
         {resources.map((r) => (
           <div
             key={r.id}
-            className={`flex items-center justify-between gap-2 sm:gap-4 p-3.5 rounded-xl border transition-colors ${
+            className={`flex items-center justify-between gap-2 sm:gap-4 p-3 sm:p-3.5 rounded-xl border transition-colors ${
               r.qty > 0
                 ? "border-amber-200 bg-amber-50/50"
                 : "border-slate-200 bg-white"
@@ -595,18 +593,18 @@ function Step3({
           >
             <div className="flex-1 min-w-0">
               <div className="text-sm font-semibold text-slate-900 truncate">{r.name}</div>
-              <div className="text-xs text-slate-500 truncate">
-                <span className={r.available > 0 ? "text-emerald-600" : "text-red-500"}>
+              <div className="text-xs text-slate-500 truncate mt-0.5">
+                <span className={r.available > 0 ? "text-emerald-600 font-medium" : "text-red-500 font-medium"}>
                   {r.available} available
                 </span>
                 <span className="text-slate-400"> / {r.total_quantity} total</span>
               </div>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               <button
                 onClick={() => setQty(r.id, Math.max(0, r.qty - 1))}
                 disabled={r.qty === 0}
-                className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg border border-slate-300 flex items-center justify-center text-slate-600 hover:bg-slate-100 disabled:opacity-30 text-sm font-bold shrink-0"
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg border border-slate-300 flex items-center justify-center text-slate-600 hover:bg-slate-100 disabled:opacity-30 text-lg font-medium shrink-0 active:scale-[0.95] transition-transform"
               >
                 −
               </button>
@@ -621,12 +619,12 @@ function Step3({
                     Math.min(r.available, Math.max(0, Number(e.target.value)))
                   )
                 }
-                className="w-10 sm:w-12 text-center text-sm font-semibold border border-slate-300 rounded-lg py-1 outline-none focus:border-amber-500"
+                className="w-12 sm:w-14 text-center text-sm font-semibold border border-slate-300 rounded-lg py-1.5 outline-none focus:border-amber-500"
               />
               <button
                 onClick={() => setQty(r.id, Math.min(r.available, r.qty + 1))}
                 disabled={r.qty >= r.available || r.available === 0}
-                className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg border border-slate-300 flex items-center justify-center text-slate-600 hover:bg-slate-100 disabled:opacity-30 text-sm font-bold shrink-0"
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg border border-slate-300 flex items-center justify-center text-slate-600 hover:bg-slate-100 disabled:opacity-30 text-lg font-medium shrink-0 active:scale-[0.95] transition-transform"
               >
                 +
               </button>
@@ -634,8 +632,8 @@ function Step3({
           </div>
         ))}
       </div>
-      <div className="mt-4 flex items-start sm:items-center gap-2 text-xs text-slate-400 bg-slate-50 rounded-lg px-3 py-2">
-        <Info className="w-3.5 h-3.5 shrink-0 mt-0.5 sm:mt-0" />
+      <div className="mt-5 flex items-start sm:items-center gap-2.5 text-xs text-slate-500 bg-slate-50 rounded-lg px-4 py-3">
+        <Info className="w-4 h-4 shrink-0 mt-0.5 sm:mt-0 text-slate-400" />
         Resources are optional. Leave all at 0 to proceed without equipment.
       </div>
       <NavButtons onBack={onBack} onNext={onNext} loading={false} nextLabel="Review Booking" />
@@ -662,7 +660,7 @@ function Step4({
   isEdit:    boolean;
 }) {
   return (
-    <div>
+    <div className="w-full">
       <SectionHeader
         icon={<ClipboardCheck className="w-5 h-5" />}
         title="Review & Submit"
@@ -692,7 +690,7 @@ function Step4({
         </ReviewSection>
       </div>
 
-      <div className="mt-6 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs text-amber-700 leading-relaxed">
+      <div className="mt-6 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs sm:text-sm text-amber-800 leading-relaxed break-words">
         {isEdit
           ? "Saving will reset this booking to Pending and it will need to be approved again."
           : "Your request will be submitted as Pending and requires HOD/Coordinator approval."}
@@ -725,16 +723,16 @@ function SectionHeader({
   subtitle: string;
 }) {
   return (
-    <div className="flex items-start gap-3">
+    <div className="flex items-start gap-3 w-full">
       <div
         className="w-10 h-10 rounded-xl flex items-center justify-center text-amber-400 shrink-0"
         style={{ background: "#0D1A38" }}
       >
         {icon}
       </div>
-      <div>
-        <h2 className="font-display font-bold text-slate-900 text-lg sm:text-xl">{title}</h2>
-        <p className="text-xs sm:text-sm text-slate-500">{subtitle}</p>
+      <div className="min-w-0 flex-1">
+        <h2 className="font-display font-bold text-slate-900 text-lg sm:text-xl break-words">{title}</h2>
+        <p className="text-xs sm:text-sm text-slate-500 break-words mt-0.5">{subtitle}</p>
       </div>
     </div>
   );
@@ -748,7 +746,7 @@ function FormField({
   children: React.ReactNode;
 }) {
   return (
-    <div>
+    <div className="w-full">
       <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
         {label}
       </label>
@@ -773,21 +771,21 @@ function NavButtons({
   nextClass?:    string;
 }) {
   return (
-    <div className="flex items-center justify-between mt-8 pt-6 border-t border-slate-100">
+    <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between mt-8 pt-6 border-t border-slate-100 gap-4 sm:gap-0">
       {onBack ? (
         <button
           onClick={onBack}
-          className="flex items-center gap-1.5 py-2 sm:py-2.5 px-2 -ml-2 text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors"
+          className="flex items-center justify-center sm:justify-start gap-1.5 py-3 sm:py-2.5 px-4 sm:px-2 sm:-ml-2 text-sm font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 sm:bg-transparent rounded-xl sm:rounded-none transition-all active:scale-[0.98] sm:active:scale-100"
         >
           <ChevronLeft className="w-4 h-4 shrink-0" /> Back
         </button>
       ) : (
-        <div />
+        <div className="hidden sm:block" />
       )}
       <button
         onClick={onNext}
         disabled={loading || nextDisabled}
-        className={`flex items-center gap-2 px-5 py-3 sm:py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm ${
+        className={`flex items-center justify-center gap-2 px-5 py-3.5 sm:py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm active:scale-[0.98] ${
           nextClass ?? "text-white"
         }`}
         style={!nextClass ? { background: "#0D1A38" } : undefined}
@@ -808,22 +806,22 @@ function ReviewSection({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 overflow-hidden">
-      <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-200">
+    <div className="rounded-xl border border-slate-200 overflow-hidden w-full">
+      <div className="px-4 py-3 sm:py-2.5 bg-slate-50 border-b border-slate-200">
         <h4 className="text-xs font-bold text-slate-600 uppercase tracking-wider">
           {title}
         </h4>
       </div>
-      <div className="px-4 py-3 space-y-2">{children}</div>
+      <div className="px-4 py-4 sm:py-3 space-y-3 sm:space-y-2">{children}</div>
     </div>
   );
 }
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex items-start justify-between gap-4 text-sm">
-      <span className="text-slate-500 shrink-0">{label}</span>
-      <span className="text-slate-900 font-medium text-right break-words">{value}</span>
+    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-1 sm:gap-4 text-sm border-b border-slate-100/50 sm:border-transparent pb-2 sm:pb-0 last:border-0 last:pb-0">
+      <span className="text-slate-500 shrink-0 font-medium sm:font-normal">{label}</span>
+      <span className="text-slate-900 font-medium text-left sm:text-right break-words w-full sm:w-auto">{value}</span>
     </div>
   );
 }
