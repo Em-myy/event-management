@@ -56,7 +56,7 @@ export default function ProfileClient({
   const { avatarUrl, initials: contextInitials } = useAuth();
 
   /* ── Personal info state ─────────────────────────────────── */
-  const [fullName,   setFullName]   = useState(profile.full_name   ?? "");
+  const [username,   setUsername]   = useState(profile.username   ?? "");
   const [infoSaving, setInfoSaving] = useState(false);
   const [infoMsg,    setInfoMsg]    = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -88,7 +88,7 @@ export default function ProfileClient({
       const { error } = await supabase
         .from("profiles")
         .update({
-          full_name:  fullName.trim(),
+          username:  username.trim(),
         })
         .eq("id", profile.id);
 
@@ -265,8 +265,8 @@ export default function ProfileClient({
               <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
               <input
                 required
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 placeholder="Dr. Jane Smith"
                 className="field-input !pl-9 w-full text-sm sm:text-base py-2.5 sm:py-2"
               />
