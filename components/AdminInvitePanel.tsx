@@ -1,78 +1,114 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
-  Mail, UserPlus, Send, RefreshCw, X,
-  Clock, CheckCircle2, XCircle, Loader2,
-  AlertCircle, ChevronDown, Info,
-} from 'lucide-react';
+  Mail,
+  UserPlus,
+  Send,
+  RefreshCw,
+  X,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  Loader2,
+  AlertCircle,
+  ChevronDown,
+  Info,
+} from "lucide-react";
 import { formatDateTime } from "@/utils/format";
 import type { AdminInvite } from "@/utils/queries";
-import ConfirmModal from "@/components/ConfirmModal"; 
+import ConfirmModal from "@/components/ConfirmModal";
 import { useTableChangeRefresh } from "@/hooks/useTableChangeRefresh";
 import LiveUpdatePill from "@/components/LiveUpdatePill";
 
 /* ── Types & Interfaces ───────────────────────────────────── */
-export type InviteStatus = 'pending' | 'accepted' | 'cancelled' | 'expired';
+export type InviteStatus = "pending" | "accepted" | "cancelled" | "expired";
 
 interface AdminInvitePanelProps {
-  initialInvites?: AdminInvite[]
+  initialInvites?: AdminInvite[];
 }
 
 const ROLES = [
   {
     value: 1,
-    label: 'Lecturer / Student (General User)',
-    desc:  'Can view the event calendar, create booking requests, and track their own submissions.',
+    label: "Lecturer / Student (General User)",
+    desc: "Can view the event calendar, create booking requests, and track their own submissions.",
   },
   {
     value: 2,
-    label: 'HOD / Event Coordinator',
-    desc:  'Everything a Lecturer can do, plus the ability to approve or reject booking requests.',
+    label: "HOD / Event Coordinator",
+    desc: "Everything a Lecturer can do, plus the ability to approve or reject booking requests.",
   },
 ];
 
-const STATUS: Record<InviteStatus, { label: string; cls: string; Icon: React.ElementType }> = {
-  pending:   { label: 'Pending',   cls: 'bg-amber-50 text-amber-700 border-amber-200',   Icon: Clock },
-  accepted:  { label: 'Accepted',  cls: 'bg-emerald-50 text-emerald-700 border-emerald-200', Icon: CheckCircle2 },
-  cancelled: { label: 'Cancelled', cls: 'bg-slate-100 text-slate-500 border-slate-200',   Icon: XCircle },
-  expired:   { label: 'Expired',   cls: 'bg-red-50 text-red-600 border-red-200',         Icon: AlertCircle },
+const STATUS: Record<
+  InviteStatus,
+  { label: string; cls: string; Icon: React.ElementType }
+> = {
+  pending: {
+    label: "Pending",
+    cls: "bg-amber-50 text-amber-700 border-amber-200",
+    Icon: Clock,
+  },
+  accepted: {
+    label: "Accepted",
+    cls: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    Icon: CheckCircle2,
+  },
+  cancelled: {
+    label: "Cancelled",
+    cls: "bg-slate-100 text-slate-500 border-slate-200",
+    Icon: XCircle,
+  },
+  expired: {
+    label: "Expired",
+    cls: "bg-red-50 text-red-600 border-red-200",
+    Icon: AlertCircle,
+  },
 };
 
-export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePanelProps) {
+export default function AdminInvitePanel({
+  initialInvites = [],
+}: AdminInvitePanelProps) {
   const router = useRouter();
 
   const { pinged } = useTableChangeRefresh({
-    table: "invites", 
+    table: "invites",
     channelName: "admin-invites-channel",
   });
 
-  const [email,      setEmail]      = useState('');
-  const [roleId,     setRoleId]     = useState(1);
-  const [roleOpen,   setRoleOpen]   = useState(false);
+  const [email, setEmail] = useState("");
+  const [roleId, setRoleId] = useState(1);
+  const [roleOpen, setRoleOpen] = useState(false);
 
-  const invites = initialInvites; 
-  
-  const [sending,  setSending]  = useState(false);
+  const invites = initialInvites;
+
+  const [sending, setSending] = useState(false);
   const [actionId, setActionId] = useState<string | number | null>(null);
-  const [success,  setSuccess]  = useState('');
-  const [error,    setError]    = useState('');
-  
-  const [cancelTarget, setCancelTarget] = useState<{ id: string | number, email: string } | null>(null);
+  const [success, setSuccess] = useState("");
+  const [error, setError] = useState("");
 
-  const selectedRole = ROLES.find(r => r.value === roleId);
+  const [cancelTarget, setCancelTarget] = useState<{
+    id: string | number;
+    email: string;
+  } | null>(null);
 
-  function clearFeedback() { setSuccess(''); setError(''); }
+  const selectedRole = ROLES.find((r) => r.value === roleId);
+
+  function clearFeedback() {
+    setSuccess("");
+    setError("");
+  }
 
   async function callApi(url: string, body: any) {
-    const res  = await fetch(url, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify(body),
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error ?? 'Request failed');
+    if (!res.ok) throw new Error(data.error ?? "Request failed");
     return data;
   }
 
@@ -81,22 +117,24 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
     clearFeedback();
 
     if (!email.trim()) {
-      setError('Please enter an email address.');
+      setError("Please enter an email address.");
       return;
     }
 
     setSending(true);
     try {
-      const data = await callApi('/api/admin/invite', {
-        email:      email.trim(),
-        role_id:    roleId,
+      const data = await callApi("/api/admin/invite", {
+        email: email.trim(),
+        role_id: roleId,
       });
       setSuccess(data.message);
-      setEmail('');
+      setEmail("");
       setRoleId(1);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      setError(
+        err instanceof Error ? err.message : "An unknown error occurred",
+      );
     } finally {
       setSending(false);
     }
@@ -106,13 +144,13 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
     clearFeedback();
     setActionId(inviteId);
     try {
-      const data = await callApi('/api/admin/invite/resend', {
+      const data = await callApi("/api/admin/invite/resend", {
         invite_id: inviteId,
       });
       setSuccess(data.message);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to resend invite');
+      setError(err instanceof Error ? err.message : "Failed to resend invite");
     } finally {
       setActionId(null);
     }
@@ -120,18 +158,18 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
 
   async function executeCancel() {
     if (!cancelTarget) return;
-    
+
     clearFeedback();
     setActionId(cancelTarget.id);
-    
+
     try {
-      const data = await callApi('/api/admin/invite/cancel', {
+      const data = await callApi("/api/admin/invite/cancel", {
         invite_id: cancelTarget.id,
       });
       setSuccess(data.message);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to cancel invite');
+      setError(err instanceof Error ? err.message : "Failed to cancel invite");
     } finally {
       setActionId(null);
       setCancelTarget(null);
@@ -140,7 +178,6 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
 
   return (
     <div className="space-y-4 sm:space-y-6 animate-fade-in relative w-full">
-      
       {/* ✅ Place the live update pill at the top of the component */}
       <LiveUpdatePill show={pinged} />
 
@@ -149,7 +186,7 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
         <div className="px-4 sm:px-6 py-4 border-b border-slate-100 flex items-start sm:items-center gap-3 flex-col sm:flex-row">
           <div
             className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-            style={{ background: '#0D1A38' }}
+            style={{ background: "#0D1A38" }}
           >
             <UserPlus className="w-4 h-4 text-amber-400" />
           </div>
@@ -158,7 +195,8 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
               Send an invite
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              The user gets a secure sign-up link by email. Their role is applied automatically when they register.
+              The user gets a secure sign-up link by email. Their role is
+              applied automatically when they register.
             </p>
           </div>
         </div>
@@ -194,9 +232,12 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
                   type="email"
                   required
                   value={email}
-                  onChange={e => { setEmail(e.target.value); clearFeedback(); }}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    clearFeedback();
+                  }}
                   placeholder="staff@institution.edu"
-                  className="field-input !pl-10 py-2 pr-3 w-full border rounded"
+                  className="field-input pl-10! py-2 pr-3 w-full border rounded"
                 />
               </div>
             </div>
@@ -208,18 +249,18 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
               <div className="relative">
                 <button
                   type="button"
-                  onClick={() => setRoleOpen(p => !p)}
+                  onClick={() => setRoleOpen((p) => !p)}
                   className="w-full flex items-center justify-between px-4 py-2.5 border border-slate-300 rounded-xl bg-white text-sm font-medium text-slate-900 hover:border-slate-400 transition-colors text-left"
                 >
                   <span className="truncate pr-4">{selectedRole?.label}</span>
                   <ChevronDown
-                    className={`w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0 ${roleOpen ? 'rotate-180' : ''}`}
+                    className={`w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0 ${roleOpen ? "rotate-180" : ""}`}
                   />
                 </button>
 
                 {roleOpen && (
                   <div className="absolute z-30 top-full mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden">
-                    {ROLES.map(opt => (
+                    {ROLES.map((opt) => (
                       <button
                         key={opt.value}
                         type="button"
@@ -228,12 +269,16 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
                           setRoleOpen(false);
                           clearFeedback();
                         }}
-                        className={`w-full text-left px-4 py-3 transition-colors border-b border-slate-100 last:border-0 hover:bg-slate-50 ${roleId === opt.value ? 'bg-amber-50' : ''}`}
+                        className={`w-full text-left px-4 py-3 transition-colors border-b border-slate-100 last:border-0 hover:bg-slate-50 ${roleId === opt.value ? "bg-amber-50" : ""}`}
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div>
-                            <p className="text-sm font-semibold text-slate-900">{opt.label}</p>
-                            <p className="text-xs text-slate-500 mt-0.5 whitespace-normal">{opt.desc}</p>
+                            <p className="text-sm font-semibold text-slate-900">
+                              {opt.label}
+                            </p>
+                            <p className="text-xs text-slate-500 mt-0.5 whitespace-normal">
+                              {opt.desc}
+                            </p>
                           </div>
                           {roleId === opt.value && (
                             <div className="w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center shrink-0 mt-0.5">
@@ -252,7 +297,9 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
           <div className="flex items-start gap-3 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 mb-5">
             <Info className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
             <p className="text-xs text-slate-500 leading-relaxed">
-              <span className="font-semibold text-slate-700">How it works: </span>
+              <span className="font-semibold text-slate-700">
+                How it works:{" "}
+              </span>
               Supabase emails a secure one-time sign-up link. When the user
               clicks it and creates their password, they are automatically
               assigned the role selected above — no manual update needed.
@@ -264,13 +311,14 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
               type="submit"
               disabled={sending}
               className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-semibold text-white rounded-xl transition-all hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed shadow-sm active:scale-[0.98]"
-              style={{ background: '#0D1A38' }}
+              style={{ background: "#0D1A38" }}
             >
-              {sending
-                ? <Loader2 className="w-4 h-4 animate-spin" />
-                : <Send className="w-4 h-4" />
-              }
-              {sending ? 'Sending…' : 'Send Invite'}
+              {sending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
+              {sending ? "Sending…" : "Send Invite"}
             </button>
           </div>
         </form>
@@ -279,14 +327,18 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
       {/* ════ Invite History Table ════════════════════════════ */}
       <div className="card overflow-hidden">
         <div className="px-4 sm:px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-slate-900">Invite history</h3>
+          <h3 className="text-sm font-semibold text-slate-900">
+            Invite history
+          </h3>
           <span className="text-xs text-slate-400">{invites.length} total</span>
         </div>
 
         {invites.length === 0 ? (
           <div className="px-4 sm:px-6 py-10 sm:py-16 text-center">
             <Mail className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-            <p className="text-sm font-medium text-slate-500">No invites sent yet</p>
+            <p className="text-sm font-medium text-slate-500">
+              No invites sent yet
+            </p>
             <p className="text-xs text-slate-400 mt-1">
               Use the form above to invite lecturers and HODs.
             </p>
@@ -305,39 +357,52 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
                 </tr>
               </thead>
               <tbody>
-                {invites.map(inv => {
-                  const cfg = STATUS[inv.status as InviteStatus] ?? STATUS.pending;
-                  const inviter = Array.isArray(inv.profiles) ? inv.profiles[0] : inv.profiles;
-                  
-                  const { Icon }  = cfg;
+                {invites.map((inv) => {
+                  const cfg =
+                    STATUS[inv.status as InviteStatus] ?? STATUS.pending;
+                  const inviter = Array.isArray(inv.profiles)
+                    ? inv.profiles[0]
+                    : inv.profiles;
+
+                  const { Icon } = cfg;
                   const isActioning = actionId === inv.id;
-                  const roleName  = inv.role_id === 2
-                    ? 'HOD / Coordinator'
-                    : 'Lecturer / Student';
+                  const roleName =
+                    inv.role_id === 2
+                      ? "HOD / Coordinator"
+                      : "Lecturer / Student";
 
                   return (
                     <tr key={inv.id} className="border-t border-slate-100">
-                      <td className="px-4 sm:px-6 py-3 font-medium text-slate-900">{inv.email}</td>
+                      <td className="px-4 sm:px-6 py-3 font-medium text-slate-900">
+                        {inv.email}
+                      </td>
                       <td className="px-4 sm:px-6 py-3">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
                             inv.role_id === 2
-                              ? 'bg-amber-50 text-amber-700 border-amber-200'
-                              : 'bg-blue-50 text-blue-700 border-blue-200'
+                              ? "bg-amber-50 text-amber-700 border-amber-200"
+                              : "bg-blue-50 text-blue-700 border-blue-200"
                           }`}
                         >
                           {roleName}
                         </span>
                       </td>
-                      <td className="px-4 sm:px-6 py-3 text-slate-500">{inviter?.username ?? 'Admin'}</td>
-                      <td className="px-4 sm:px-6 py-3 text-slate-500">{formatDateTime(inv.created_at)}</td>
+                      <td className="px-4 sm:px-6 py-3 text-slate-500">
+                        {inviter?.username ?? "Admin"}
+                      </td>
+                      <td className="px-4 sm:px-6 py-3 text-slate-500">
+                        {formatDateTime(inv.created_at)}
+                      </td>
                       <td className="px-4 sm:px-6 py-3">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${cfg.cls}`}>
+                        <span
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${cfg.cls}`}
+                        >
                           <Icon className="w-3 h-3" />
                           {cfg.label}
                         </span>
                       </td>
                       <td className="px-4 sm:px-6 py-3">
-                        {inv.status === 'pending' && (
+                        {inv.status === "pending" && (
                           <div className="flex items-center gap-2">
                             <button
                               onClick={() => resend(inv.id)}
@@ -345,13 +410,19 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
                               title="Resend invite email"
                               className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all disabled:opacity-50"
                             >
-                              {isActioning
-                                ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                : <RefreshCw className="w-3.5 h-3.5" />
-                              }
+                              {isActioning ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <RefreshCw className="w-3.5 h-3.5" />
+                              )}
                             </button>
                             <button
-                              onClick={() => setCancelTarget({ id: inv.id, email: inv.email })}
+                              onClick={() =>
+                                setCancelTarget({
+                                  id: inv.id,
+                                  email: inv.email,
+                                })
+                              }
                               disabled={isActioning}
                               title="Cancel invite"
                               className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all disabled:opacity-50"
@@ -361,13 +432,16 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
                           </div>
                         )}
 
-                        {inv.status === 'accepted' && (
+                        {inv.status === "accepted" && (
                           <span className="text-xs text-slate-400">
-                            Joined {inv.accepted_at ? formatDateTime(inv.accepted_at) : ''}
+                            Joined{" "}
+                            {inv.accepted_at
+                              ? formatDateTime(inv.accepted_at)
+                              : ""}
                           </span>
                         )}
 
-                        {['cancelled', 'expired'].includes(inv.status) && (
+                        {["cancelled", "expired"].includes(inv.status) && (
                           <span className="text-xs text-slate-400">—</span>
                         )}
                       </td>
@@ -380,7 +454,7 @@ export default function AdminInvitePanel({ initialInvites = [] }: AdminInvitePan
         )}
       </div>
 
-      <ConfirmModal 
+      <ConfirmModal
         isOpen={cancelTarget !== null}
         onClose={() => setCancelTarget(null)}
         onConfirm={executeCancel}

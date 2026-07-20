@@ -52,12 +52,11 @@ const MainPage = () => {
           email: form.email,
           password: form.password,
         });
-        
+
         if (signInError) throw signInError;
 
         router.push("/dashboard");
         router.refresh();
-        
       } else {
         const { data, error: signUpError } = await supabase.auth.signUp({
           email: form.email,
@@ -66,23 +65,21 @@ const MainPage = () => {
             emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
             data: {
               username: form.username,
-              role_id: 1, 
+              role_id: 1,
             },
           },
         });
-        
+
         if (signUpError) throw signUpError;
 
         if (!data.session) {
-          router.push("/verify-email"); 
+          router.push("/verify-email");
         } else {
           router.push("/dashboard");
         }
-        
+
         router.refresh();
       }
-
-      
     } catch (err: any) {
       console.error("Auth error:", err);
       setError(err.message ?? "Authentication Failed");
@@ -97,7 +94,8 @@ const MainPage = () => {
         <div
           className="absolute inset-0 opacity-[0.04]"
           style={{
-            backgroundImage: "linear-gradient(#fff 1px,transparent 1px) linear-gradient(90deg,#fff 1px,transparent 1px)",
+            backgroundImage:
+              "linear-gradient(#fff 1px,transparent 1px) linear-gradient(90deg,#fff 1px,transparent 1px)",
             backgroundSize: "40px 40px",
           }}
         />
@@ -171,7 +169,8 @@ const MainPage = () => {
         </div>
 
         <div className="relative z-10 text-xs text-slate-600">
-          &copy; {new Date().getFullYear()} ESRMS · Institutional Resource Platform
+          &copy; {new Date().getFullYear()} ESRMS · Institutional Resource
+          Platform
         </div>
       </div>
 
@@ -198,7 +197,9 @@ const MainPage = () => {
                   setError("");
                 }}
                 className={`flex-1 py-2 text-sm font-semibold rounded-lg cursor-pointer transition-all ${
-                  mode === m ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
+                  mode === m
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-500"
                 }`}
               >
                 {m === "Sign In" ? "Sign in" : "Sign up"}
@@ -249,7 +250,11 @@ const MainPage = () => {
                   onClick={() => setShowPassword((p) => !p)}
                   className="text-slate-400 hover:text-slate-600 cursor-pointer"
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
                 </button>
               }
             >
@@ -274,15 +279,15 @@ const MainPage = () => {
               {mode === "Sign Up" ? "Sign up" : "Sign in"}
             </button>
           </form>
-           <div className="flex items-center my-4">
-              <div className="grow border-t border-slate-200"></div>
-              <span className="px-3 text-sm text-slate-400 font-medium">or</span>
-              <div className="grow border-t border-slate-200"></div>
-            </div>
-            
-            <div className="w-full">
-              <GoogleButton />
-            </div>
+          <div className="flex items-center my-4">
+            <div className="grow border-t border-slate-200"></div>
+            <span className="px-3 text-sm text-slate-400 font-medium">or</span>
+            <div className="grow border-t border-slate-200"></div>
+          </div>
+
+          <div className="w-full">
+            <GoogleButton />
+          </div>
         </div>
       </div>
     </main>
