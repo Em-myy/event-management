@@ -178,7 +178,6 @@ export default function AdminInvitePanel({
 
   return (
     <div className="space-y-4 sm:space-y-6 animate-fade-in relative w-full">
-      {/* ✅ Place the live update pill at the top of the component */}
       <LiveUpdatePill show={pinged} />
 
       {/* ════ Send Invite Card ════════════════════════════════ */}
@@ -345,7 +344,7 @@ export default function AdminInvitePanel({
           </div>
         ) : (
           <div className="overflow-x-auto w-full">
-            <table className="data-table w-full text-left whitespace-nowrap min-w-[700px]">
+            <table className="data-table w-full text-left whitespace-nowrap min-w-175">
               <thead>
                 <tr>
                   <th className="px-4 sm:px-6 py-3">Email</th>
