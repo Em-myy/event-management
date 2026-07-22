@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { Check, X, Loader2, AlertCircle } from "lucide-react";
-import ConfirmModal from "@/components/ConfirmModal"; 
+import ConfirmModal from "@/components/ConfirmModal";
 
 interface ApprovalButtonsProps {
   bookingId: string;
@@ -13,12 +13,12 @@ interface ApprovalButtonsProps {
 
 export default function ApprovalButtons({ bookingId }: ApprovalButtonsProps) {
   const [loading, setLoading] = useState(false);
-  const [showApproveModal, setShowApproveModal] = useState(false); 
-  const [showRejectModal, setShowRejectModal] = useState(false);   
+  const [showApproveModal, setShowApproveModal] = useState(false);
+  const [showRejectModal, setShowRejectModal] = useState(false);
   const [reason, setReason] = useState("");
   const [error, setError] = useState("");
   const [mounted, setMounted] = useState(false);
-  
+
   const router = useRouter();
   const supabase = createClient();
 
@@ -30,7 +30,9 @@ export default function ApprovalButtons({ bookingId }: ApprovalButtonsProps) {
     setLoading(true);
     setError("");
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated.");
 
       const { error: updateErr } = await supabase
@@ -43,11 +45,13 @@ export default function ApprovalButtons({ bookingId }: ApprovalButtonsProps) {
         .eq("id", bookingId);
 
       if (updateErr) throw updateErr;
-      
+
       setShowApproveModal(false);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to approve booking.");
+      setError(
+        err instanceof Error ? err.message : "Failed to approve booking.",
+      );
     } finally {
       setLoading(false);
     }
@@ -67,21 +71,22 @@ export default function ApprovalButtons({ bookingId }: ApprovalButtonsProps) {
         .eq("id", bookingId);
 
       if (updateErr) throw updateErr;
-      
+
       setShowRejectModal(false);
       setReason("");
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to reject booking.");
+      setError(
+        err instanceof Error ? err.message : "Failed to reject booking.",
+      );
     } finally {
       setLoading(false);
     }
   }
 
-  // ✅ Extracted Reject Modal Content for Portal
   const rejectModalContent = (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 sm:p-6 w-full animate-fade-in"
+      className="fixed inset-0 z-9999 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 sm:p-6 w-full animate-fade-in"
       onClick={(e) => e.target === e.currentTarget && setShowRejectModal(false)}
     >
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-5 sm:p-6 animate-slide-up">
@@ -90,10 +95,10 @@ export default function ApprovalButtons({ bookingId }: ApprovalButtonsProps) {
             <AlertCircle className="w-6 h-6 text-red-500" />
           </div>
           <div>
-            <h3 className="text-lg sm:text-xl font-bold leading-tight text-red-600 break-words">
+            <h3 className="text-lg sm:text-xl font-bold leading-tight text-red-600 wrap-break-word">
               Reject Booking
             </h3>
-            <p className="text-xs sm:text-sm text-slate-500 font-normal mt-0.5 break-words">
+            <p className="text-xs sm:text-sm text-slate-500 font-normal mt-0.5 wrap-break-word">
               Provide a reason for the requester
             </p>
           </div>
@@ -102,7 +107,7 @@ export default function ApprovalButtons({ bookingId }: ApprovalButtonsProps) {
         {error && (
           <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 rounded-lg px-3 py-2 text-sm mb-4">
             <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-            <span className="break-words flex-1">{error}</span>
+            <span className="wrap-break-word flex-1">{error}</span>
           </div>
         )}
 
@@ -143,12 +148,12 @@ export default function ApprovalButtons({ bookingId }: ApprovalButtonsProps) {
     <>
       <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2 sm:gap-3 shrink-0">
         {error && !showRejectModal && !showApproveModal && (
-          <div className="flex items-start gap-1.5 text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-2.5 py-1.5 w-full sm:max-w-[180px]">
+          <div className="flex items-start gap-1.5 text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-2.5 py-1.5 w-full sm:max-w-45">
             <AlertCircle className="w-3 h-3 shrink-0 mt-0.5" />
-            <span className="break-words">{error}</span>
+            <span className="wrap-break-word">{error}</span>
           </div>
         )}
-        
+
         {/* Trigger Approve Modal */}
         <button
           onClick={() => setShowApproveModal(true)}
@@ -173,7 +178,6 @@ export default function ApprovalButtons({ bookingId }: ApprovalButtonsProps) {
         </button>
       </div>
 
-    
       <ConfirmModal
         isOpen={showApproveModal}
         onClose={() => setShowApproveModal(false)}
@@ -186,8 +190,9 @@ export default function ApprovalButtons({ bookingId }: ApprovalButtonsProps) {
         loading={loading}
       />
 
-      
-      {showRejectModal && mounted && createPortal(rejectModalContent, document.body)}
+      {showRejectModal &&
+        mounted &&
+        createPortal(rejectModalContent, document.body)}
     </>
   );
 }
