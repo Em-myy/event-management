@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
-import { format, parseISO } from "date-fns";
 import {
   CalendarDays,
   MapPin,
@@ -18,109 +17,112 @@ import {
   Info,
 } from "lucide-react";
 import type { EditableBooking } from "@/utils/queries";
+import { formatDate, formatDateTime, formatTime } from "@/utils/format";
 
 /* ── Step definitions ─────────────────────────────────────── */
 const STEPS = [
-  { id: 1, label: "Event Details",   icon: CalendarDays   },
-  { id: 2, label: "Select Venue",    icon: MapPin         },
-  { id: 3, label: "Resources",       icon: Package        },
+  { id: 1, label: "Event Details", icon: CalendarDays },
+  { id: 2, label: "Select Venue", icon: MapPin },
+  { id: 3, label: "Resources", icon: Package },
   { id: 4, label: "Review & Submit", icon: ClipboardCheck },
 ];
 
 /* ── RPC return types ─────────────────────────────────────── */
 interface AvailableVenue {
-  id:          string;
-  name:        string;
-  location:    string | null;
-  capacity:    number;
+  id: string;
+  name: string;
+  location: string | null;
+  capacity: number;
   description: string | null;
 }
 
 interface ResourceAvailability {
-  id:             string;
-  name:           string;
-  description:    string | null;
-  condition:      string;
+  id: string;
+  name: string;
+  description: string | null;
+  condition: string;
   total_quantity: number;
-  allocated:      number;
-  available:      number;
-  qty:            number; // local UI state
+  allocated: number;
+  available: number;
+  qty: number; // local UI state
 }
 
 interface EventDetails {
-  title:       string;
+  title: string;
   description: string;
-  date:        string;
-  start_time:  string;
-  end_time:    string;
+  date: string;
+  start_time: string;
+  end_time: string;
 }
 
 /* ── Props ────────────────────────────────────────────────── */
 interface BookingWizardProps {
-  mode?:           "create" | "edit";
+  mode?: "create" | "edit";
   initialBooking?: EditableBooking;
 }
 
-/* ── Helpers ──────────────────────────────────────────────── */
-function toDateString(iso: string) {
-  return format(parseISO(iso), "yyyy-MM-dd");
-}
-
-function toTimeString(iso: string) {
-  return format(parseISO(iso), "HH:mm");
-}
-
 export default function BookingWizard({
-  mode           = "create",
+  mode = "create",
   initialBooking,
 }: BookingWizardProps) {
-  const router   = useRouter();
+  const router = useRouter();
   const supabase = createClient();
-  const isEdit   = mode === "edit";
+  const isEdit = mode === "edit";
 
   /* ── Pre-fill from existing booking in edit mode ─────────── */
-  const [step,      setStep]    = useState(1);
-  const [loading,   setLoading] = useState(false);
-  const [error,     setError]   = useState("");
+  const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
   const [details, setDetails] = useState<EventDetails>({
-    title:       initialBooking?.title       ?? "",
+    title: initialBooking?.title ?? "",
     description: initialBooking?.description ?? "",
-    date:        initialBooking?.start_time ? toDateString(initialBooking.start_time) : "",
-    start_time:  initialBooking?.start_time ? toTimeString(initialBooking.start_time) : "",
-    end_time:    initialBooking?.end_time   ? toTimeString(initialBooking.end_time)   : "",
+    date: initialBooking?.start_time
+      ? formatDateTime(initialBooking.start_time)
+      : "",
+    start_time: initialBooking?.start_time
+      ? formatTime(initialBooking.start_time)
+      : "",
+    end_time: initialBooking?.end_time
+      ? formatTime(initialBooking.end_time)
+      : "",
   });
 
   /* Pre-fill venue from existing booking safely using Array.isArray */
-  const rawVenue = Array.isArray(initialBooking?.venues) 
-    ? initialBooking.venues[0] 
+  const rawVenue = Array.isArray(initialBooking?.venues)
+    ? initialBooking.venues[0]
     : initialBooking?.venues;
 
   const existingVenue = rawVenue
     ? {
-        id:          rawVenue.id,
-        name:        rawVenue.name,
-        location:    rawVenue.location,
-        capacity:    rawVenue.capacity,
+        id: rawVenue.id,
+        name: rawVenue.name,
+        location: rawVenue.location,
+        capacity: rawVenue.capacity,
         description: rawVenue.description,
       }
     : null;
 
-  const [venues,    setVenues]    = useState<AvailableVenue[]>([]);
-  const [venue,     setVenue]     = useState<AvailableVenue | null>(existingVenue);
+  const [venues, setVenues] = useState<AvailableVenue[]>([]);
+  const [venue, setVenue] = useState<AvailableVenue | null>(existingVenue);
   const [resources, setResources] = useState<ResourceAvailability[]>([]);
 
   /* ── Step 1 → 2: fetch available venues ─────────────────── */
   async function goToVenueStep() {
     setError("");
-    if (!details.title || !details.date || !details.start_time || !details.end_time) {
+    if (
+      !details.title ||
+      !details.date ||
+      !details.start_time ||
+      !details.end_time
+    ) {
       setError("Please fill in all required fields.");
       return;
     }
     const start = new Date(`${details.date}T${details.start_time}`);
-    const end   = new Date(`${details.date}T${details.end_time}`);
-    
+    const end = new Date(`${details.date}T${details.end_time}`);
+
     if (end <= start) {
       setError("End time must be after start time.");
       return;
@@ -129,14 +131,14 @@ export default function BookingWizard({
     setLoading(true);
     try {
       const { data, error: err } = await supabase.rpc("get_available_venues", {
-        p_start:            start.toISOString(),
-        p_end:              end.toISOString(),
+        p_start: start.toISOString(),
+        p_end: end.toISOString(),
         /* Exclude current booking from conflict checks */
         p_exclude_event_id: isEdit ? initialBooking!.id : null,
       });
 
       if (err) throw err;
-      
+
       setVenues((data as AvailableVenue[]) ?? []);
       setStep(2);
     } catch (err) {
@@ -149,25 +151,28 @@ export default function BookingWizard({
   /* ── Step 2 → 3: fetch resource availability ────────────── */
   async function goToResourceStep() {
     if (!venue) return setError("Please select a venue.");
-    
+
     setError("");
     setLoading(true);
-    
+
     const start = new Date(`${details.date}T${details.start_time}`);
-    const end   = new Date(`${details.date}T${details.end_time}`);
-    
+    const end = new Date(`${details.date}T${details.end_time}`);
+
     try {
-      const { data, error: err } = await supabase.rpc("get_resources_availability", {
-        p_start:            start.toISOString(),
-        p_end:              end.toISOString(),
-        p_exclude_event_id: isEdit ? initialBooking!.id : null,
-      });
+      const { data, error: err } = await supabase.rpc(
+        "get_resources_availability",
+        {
+          p_start: start.toISOString(),
+          p_end: end.toISOString(),
+          p_exclude_event_id: isEdit ? initialBooking!.id : null,
+        },
+      );
 
       if (err) throw err;
 
       /* In edit mode — pre-fill quantities from existing event_resources */
       const existing = initialBooking?.event_resources ?? [];
-      
+
       setResources(
         ((data as Omit<ResourceAvailability, "qty">[]) ?? []).map((r) => {
           const prev = existing.find((e) => e.resource_id === r.id);
@@ -177,11 +182,13 @@ export default function BookingWizard({
                shows correctly (RPC already excluded this booking) */
             qty: prev?.quantity_requested ?? 0,
           };
-        })
+        }),
       );
       setStep(3);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to fetch resources");
+      setError(
+        err instanceof Error ? err.message : "Failed to fetch resources",
+      );
     } finally {
       setLoading(false);
     }
@@ -192,30 +199,34 @@ export default function BookingWizard({
     setError("");
     setLoading(true);
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError || !user) throw new Error("You must be logged in to book an event.");
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
+      if (authError || !user)
+        throw new Error("You must be logged in to book an event.");
 
       const start = new Date(`${details.date}T${details.start_time}`);
-      const end   = new Date(`${details.date}T${details.end_time}`);
+      const end = new Date(`${details.date}T${details.end_time}`);
 
       if (isEdit && initialBooking) {
         /* ── UPDATE existing booking ── */
         const { error: evErr } = await supabase
           .from("events")
           .update({
-            title:            details.title,
-            description:      details.description || null,
-            venue_id:         venue!.id,
-            start_time:       start.toISOString(),
-            end_time:         end.toISOString(),
+            title: details.title,
+            description: details.description || null,
+            venue_id: venue!.id,
+            start_time: start.toISOString(),
+            end_time: end.toISOString(),
             /* Reset status to pending so HOD reviews the changes */
-            status:           "pending",
-            approved_by:      null,
-            approved_at:      null,
+            status: "pending",
+            approved_by: null,
+            approved_at: null,
             rejection_reason: null,
           })
           .eq("id", initialBooking.id);
-          
+
         if (evErr) throw evErr;
 
         /* Delete old resources and re-insert updated ones */
@@ -223,19 +234,21 @@ export default function BookingWizard({
           .from("event_resources")
           .delete()
           .eq("event_id", initialBooking.id);
-          
+
         if (delErr) throw delErr;
 
         const toInsert = resources
           .filter((r) => r.qty > 0)
           .map((r) => ({
-            event_id:           initialBooking.id,
-            resource_id:        r.id,
+            event_id: initialBooking.id,
+            resource_id: r.id,
             quantity_requested: r.qty,
           }));
 
         if (toInsert.length > 0) {
-          const { error: resErr } = await supabase.from("event_resources").insert(toInsert);
+          const { error: resErr } = await supabase
+            .from("event_resources")
+            .insert(toInsert);
           if (resErr) throw resErr;
         }
       } else {
@@ -243,29 +256,31 @@ export default function BookingWizard({
         const { data: event, error: evErr } = await supabase
           .from("events")
           .insert({
-            title:       details.title,
+            title: details.title,
             description: details.description || null,
-            user_id:     user.id,
-            venue_id:    venue!.id,
-            start_time:  start.toISOString(),
-            end_time:    end.toISOString(),
-            status:      "pending",
+            user_id: user.id,
+            venue_id: venue!.id,
+            start_time: start.toISOString(),
+            end_time: end.toISOString(),
+            status: "pending",
           })
           .select()
           .single();
-          
+
         if (evErr) throw evErr;
 
         const toInsert = resources
           .filter((r) => r.qty > 0)
           .map((r) => ({
-            event_id:           event.id,
-            resource_id:        r.id,
+            event_id: event.id,
+            resource_id: r.id,
             quantity_requested: r.qty,
           }));
 
         if (toInsert.length > 0) {
-          const { error: resErr } = await supabase.from("event_resources").insert(toInsert);
+          const { error: resErr } = await supabase
+            .from("event_resources")
+            .insert(toInsert);
           if (resErr) throw resErr;
         }
       }
@@ -310,11 +325,11 @@ export default function BookingWizard({
       {isEdit && (
         <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-5 text-sm text-amber-800 animate-fade-in w-full">
           <Info className="w-4 h-4 mt-0.5 shrink-0 text-amber-500" />
-          <div className="break-words">
-            <span className="font-semibold">Editing a pending booking.</span>
-            {" "}Saving changes will reset its status back to{" "}
-            <span className="font-semibold">Pending</span> so it can be
-            reviewed again by the approving authority.
+          <div className="wrap-break-word">
+            <span className="font-semibold">Editing a pending booking.</span>{" "}
+            Saving changes will reset its status back to{" "}
+            <span className="font-semibold">Pending</span> so it can be reviewed
+            again by the approving authority.
           </div>
         </div>
       )}
@@ -322,25 +337,34 @@ export default function BookingWizard({
       {/* Step indicator */}
       <div className="card p-4 sm:p-6 mb-6 w-full">
         <div className="flex items-center justify-between relative px-2 sm:px-0">
-          <div className="absolute left-0 right-0 top-4 h-0.5 bg-slate-200 -z-0" />
+          <div className="absolute left-0 right-0 top-4 h-0.5 bg-slate-200 z-0" />
           <div
-            className="absolute left-0 top-4 h-0.5 bg-amber-500 transition-all duration-500 -z-0"
+            className="absolute left-0 top-4 h-0.5 bg-amber-500 transition-all duration-500 z-0"
             style={{ width: `${((step - 1) / (STEPS.length - 1)) * 100}%` }}
           />
           {STEPS.map((s) => {
-            const done   = step > s.id;
+            const done = step > s.id;
             const active = step === s.id;
             return (
               <div key={s.id} className="flex flex-col items-center gap-2 z-10">
-                <div className={`step-dot ${active ? "active" : done ? "done" : "upcoming"}`}>
-                  {done
-                    ? <Check className="w-3.5 h-3.5" />
-                    : <span>{s.id}</span>
-                  }
+                <div
+                  className={`step-dot ${active ? "active" : done ? "done" : "upcoming"}`}
+                >
+                  {done ? (
+                    <Check className="w-3.5 h-3.5" />
+                  ) : (
+                    <span>{s.id}</span>
+                  )}
                 </div>
-                <span className={`text-[10px] font-semibold uppercase tracking-wide hidden sm:block ${
-                  active ? "text-amber-600" : done ? "text-slate-600" : "text-slate-400"
-                }`}>
+                <span
+                  className={`text-[10px] font-semibold uppercase tracking-wide hidden sm:block ${
+                    active
+                      ? "text-amber-600"
+                      : done
+                        ? "text-slate-600"
+                        : "text-slate-400"
+                  }`}
+                >
                   {s.label}
                 </span>
               </div>
@@ -353,7 +377,7 @@ export default function BookingWizard({
       {error && (
         <div className="mb-4 flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm animate-fade-in w-full">
           <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-          <span className="break-words">{error}</span>
+          <span className="wrap-break-word">{error}</span>
         </div>
       )}
 
@@ -411,14 +435,14 @@ function Step1({
   onNext,
   loading,
 }: {
-  details:    EventDetails;
+  details: EventDetails;
   setDetails: React.Dispatch<React.SetStateAction<EventDetails>>;
-  onNext:     () => void;
-  loading:    boolean;
+  onNext: () => void;
+  loading: boolean;
 }) {
-  const set   = (k: keyof EventDetails, v: string) =>
+  const set = (k: keyof EventDetails, v: string) =>
     setDetails((p) => ({ ...p, [k]: v }));
-  const today = format(new Date(), "yyyy-MM-dd");
+  const today = formatDate(new Date());
 
   return (
     <div className="w-full">
@@ -438,7 +462,7 @@ function Step1({
         </FormField>
         <FormField label="Description">
           <textarea
-            className="field-input min-h-[100px] sm:min-h-[80px] resize-none w-full p-3 sm:p-2.5 border rounded-xl text-sm sm:text-base"
+            className="field-input min-h-25 sm:min-h-20 resize-none w-full p-3 sm:p-2.5 border rounded-xl text-sm sm:text-base"
             value={details.description}
             onChange={(e) => set("description", e.target.value)}
             placeholder="Brief description of the event..."
@@ -473,7 +497,11 @@ function Step1({
           </FormField>
         </div>
       </div>
-      <NavButtons onNext={onNext} loading={loading} nextLabel="Check Availability" />
+      <NavButtons
+        onNext={onNext}
+        loading={loading}
+        nextLabel="Check Availability"
+      />
     </div>
   );
 }
@@ -487,12 +515,12 @@ function Step2({
   onNext,
   loading,
 }: {
-  venues:      AvailableVenue[];
-  selected:    AvailableVenue | null;
+  venues: AvailableVenue[];
+  selected: AvailableVenue | null;
   setSelected: (v: AvailableVenue) => void;
-  onBack:      () => void;
-  onNext:      () => void;
-  loading:     boolean;
+  onBack: () => void;
+  onNext: () => void;
+  loading: boolean;
 }) {
   return (
     <div className="w-full">
@@ -509,8 +537,8 @@ function Step2({
         <div className="mt-6 text-center py-10 bg-slate-50 rounded-xl border border-slate-200 px-4">
           <MapPin className="w-8 h-8 text-slate-300 mx-auto mb-2" />
           <p className="text-sm text-slate-500">
-            All venues are booked for this slot. Please go back and choose
-            a different time.
+            All venues are booked for this slot. Please go back and choose a
+            different time.
           </p>
         </div>
       ) : (
@@ -527,10 +555,16 @@ function Step2({
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <div className="font-semibold text-slate-900 truncate text-sm sm:text-base">{v.name}</div>
-                  <div className="text-xs sm:text-sm text-slate-500 mt-0.5 truncate">{v.location}</div>
+                  <div className="font-semibold text-slate-900 truncate text-sm sm:text-base">
+                    {v.name}
+                  </div>
+                  <div className="text-xs sm:text-sm text-slate-500 mt-0.5 truncate">
+                    {v.location}
+                  </div>
                   {v.description && (
-                    <div className="text-xs text-slate-400 mt-1 line-clamp-2">{v.description}</div>
+                    <div className="text-xs text-slate-400 mt-1 line-clamp-2">
+                      {v.description}
+                    </div>
                   )}
                 </div>
                 <div className="flex flex-col items-end gap-1 shrink-0">
@@ -566,10 +600,10 @@ function Step3({
   onBack,
   onNext,
 }: {
-  resources:    ResourceAvailability[];
+  resources: ResourceAvailability[];
   setResources: React.Dispatch<React.SetStateAction<ResourceAvailability[]>>;
-  onBack:       () => void;
-  onNext:       () => void;
+  onBack: () => void;
+  onNext: () => void;
 }) {
   const setQty = (id: string, qty: number) =>
     setResources((r) => r.map((x) => (x.id === id ? { ...x, qty } : x)));
@@ -592,12 +626,23 @@ function Step3({
             }`}
           >
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-semibold text-slate-900 truncate">{r.name}</div>
+              <div className="text-sm font-semibold text-slate-900 truncate">
+                {r.name}
+              </div>
               <div className="text-xs text-slate-500 truncate mt-0.5">
-                <span className={r.available > 0 ? "text-emerald-600 font-medium" : "text-red-500 font-medium"}>
+                <span
+                  className={
+                    r.available > 0
+                      ? "text-emerald-600 font-medium"
+                      : "text-red-500 font-medium"
+                  }
+                >
                   {r.available} available
                 </span>
-                <span className="text-slate-400"> / {r.total_quantity} total</span>
+                <span className="text-slate-400">
+                  {" "}
+                  / {r.total_quantity} total
+                </span>
               </div>
             </div>
             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
@@ -616,7 +661,7 @@ function Step3({
                 onChange={(e) =>
                   setQty(
                     r.id,
-                    Math.min(r.available, Math.max(0, Number(e.target.value)))
+                    Math.min(r.available, Math.max(0, Number(e.target.value))),
                   )
                 }
                 className="w-12 sm:w-14 text-center text-sm font-semibold border border-slate-300 rounded-lg py-1.5 outline-none focus:border-amber-500"
@@ -636,7 +681,12 @@ function Step3({
         <Info className="w-4 h-4 shrink-0 mt-0.5 sm:mt-0 text-slate-400" />
         Resources are optional. Leave all at 0 to proceed without equipment.
       </div>
-      <NavButtons onBack={onBack} onNext={onNext} loading={false} nextLabel="Review Booking" />
+      <NavButtons
+        onBack={onBack}
+        onNext={onNext}
+        loading={false}
+        nextLabel="Review Booking"
+      />
     </div>
   );
 }
@@ -651,13 +701,13 @@ function Step4({
   loading,
   isEdit,
 }: {
-  details:   EventDetails;
-  venue:     AvailableVenue;
+  details: EventDetails;
+  venue: AvailableVenue;
   resources: ResourceAvailability[];
-  onBack:    () => void;
-  onSubmit:  () => void;
-  loading:   boolean;
-  isEdit:    boolean;
+  onBack: () => void;
+  onSubmit: () => void;
+  loading: boolean;
+  isEdit: boolean;
 }) {
   return (
     <div className="w-full">
@@ -668,14 +718,14 @@ function Step4({
       />
       <div className="mt-6 space-y-4">
         <ReviewSection title="Event Information">
-          <Row label="Title"       value={details.title} />
+          <Row label="Title" value={details.title} />
           <Row label="Description" value={details.description || "—"} />
-          <Row label="Date"        value={details.date} />
-          <Row label="Start Time"  value={details.start_time} />
-          <Row label="End Time"    value={details.end_time} />
+          <Row label="Date" value={details.date} />
+          <Row label="Start Time" value={details.start_time} />
+          <Row label="End Time" value={details.end_time} />
         </ReviewSection>
         <ReviewSection title="Venue">
-          <Row label="Name"     value={venue.name} />
+          <Row label="Name" value={venue.name} />
           <Row label="Location" value={venue.location ?? "—"} />
           <Row label="Capacity" value={`${venue.capacity} persons`} />
         </ReviewSection>
@@ -690,7 +740,7 @@ function Step4({
         </ReviewSection>
       </div>
 
-      <div className="mt-6 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs sm:text-sm text-amber-800 leading-relaxed break-words">
+      <div className="mt-6 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs sm:text-sm text-amber-800 leading-relaxed wrap-break-word">
         {isEdit
           ? "Saving will reset this booking to Pending and it will need to be approved again."
           : "Your request will be submitted as Pending and requires HOD/Coordinator approval."}
@@ -701,9 +751,10 @@ function Step4({
         onNext={onSubmit}
         loading={loading}
         nextLabel={isEdit ? "Save Changes" : "Submit Request"}
-        nextClass={isEdit
-          ? "bg-blue-600 hover:bg-blue-700 text-white"
-          : "bg-emerald-600 hover:bg-emerald-700 text-white"
+        nextClass={
+          isEdit
+            ? "bg-blue-600 hover:bg-blue-700 text-white"
+            : "bg-emerald-600 hover:bg-emerald-700 text-white"
         }
       />
     </div>
@@ -718,8 +769,8 @@ function SectionHeader({
   title,
   subtitle,
 }: {
-  icon:     React.ReactNode;
-  title:    string;
+  icon: React.ReactNode;
+  title: string;
   subtitle: string;
 }) {
   return (
@@ -731,8 +782,12 @@ function SectionHeader({
         {icon}
       </div>
       <div className="min-w-0 flex-1">
-        <h2 className="font-display font-bold text-slate-900 text-lg sm:text-xl break-words">{title}</h2>
-        <p className="text-xs sm:text-sm text-slate-500 break-words mt-0.5">{subtitle}</p>
+        <h2 className="font-display font-bold text-slate-900 text-lg sm:text-xl wrap-break-word">
+          {title}
+        </h2>
+        <p className="text-xs sm:text-sm text-slate-500 wrap-break-word mt-0.5">
+          {subtitle}
+        </p>
       </div>
     </div>
   );
@@ -742,7 +797,7 @@ function FormField({
   label,
   children,
 }: {
-  label:    string;
+  label: string;
   children: React.ReactNode;
 }) {
   return (
@@ -758,17 +813,17 @@ function FormField({
 function NavButtons({
   onBack,
   onNext,
-  loading      = false,
-  nextLabel    = "Next",
+  loading = false,
+  nextLabel = "Next",
   nextDisabled = false,
   nextClass,
 }: {
-  onBack?:       () => void;
-  onNext:        () => void;
-  loading?:      boolean;
-  nextLabel?:    string;
+  onBack?: () => void;
+  onNext: () => void;
+  loading?: boolean;
+  nextLabel?: string;
   nextDisabled?: boolean;
-  nextClass?:    string;
+  nextClass?: string;
 }) {
   return (
     <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between mt-8 pt-6 border-t border-slate-100 gap-4 sm:gap-0">
@@ -802,7 +857,7 @@ function ReviewSection({
   title,
   children,
 }: {
-  title:    string;
+  title: string;
   children: React.ReactNode;
 }) {
   return (
@@ -820,8 +875,12 @@ function ReviewSection({
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-1 sm:gap-4 text-sm border-b border-slate-100/50 sm:border-transparent pb-2 sm:pb-0 last:border-0 last:pb-0">
-      <span className="text-slate-500 shrink-0 font-medium sm:font-normal">{label}</span>
-      <span className="text-slate-900 font-medium text-left sm:text-right break-words w-full sm:w-auto">{value}</span>
+      <span className="text-slate-500 shrink-0 font-medium sm:font-normal">
+        {label}
+      </span>
+      <span className="text-slate-900 font-medium text-left sm:text-right wrap-break-word w-full sm:w-auto">
+        {value}
+      </span>
     </div>
   );
 }
