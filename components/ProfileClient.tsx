@@ -21,27 +21,27 @@ import {
   LogOut,
 } from "lucide-react";
 import { ProfileData } from "@/utils/queries";
-import ConfirmModal from "@/components/ConfirmModal"; 
+import ConfirmModal from "@/components/ConfirmModal";
 
 /* ── Role badge colours ───────────────────────────────────── */
 const ROLE_STYLES: Record<string, string> = {
   admin: "bg-purple-50 text-purple-700 border-purple-200",
-  hod:   "bg-amber-50  text-amber-700  border-amber-200",
-  user:  "bg-blue-50   text-blue-700   border-blue-200",
+  hod: "bg-amber-50  text-amber-700  border-amber-200",
+  user: "bg-blue-50   text-blue-700   border-blue-200",
 };
 
 interface Stats {
-  total:    number;
+  total: number;
   approved: number;
-  pending:  number;
+  pending: number;
   rejected: number;
 }
 
 interface ProfileClientProps {
-  profile:   ProfileData;
-  email:     string;
+  profile: ProfileData;
+  email: string;
   createdAt: string;
-  stats:     Stats;
+  stats: Stats;
 }
 
 export default function ProfileClient({
@@ -50,29 +50,35 @@ export default function ProfileClient({
   createdAt,
   stats,
 }: ProfileClientProps) {
-  const router   = useRouter();
+  const router = useRouter();
   const supabase = createClient();
 
   const { avatarUrl, initials: contextInitials } = useAuth();
 
   /* ── Personal info state ─────────────────────────────────── */
-  const [username,   setUsername]   = useState(profile.username   ?? "");
+  const [username, setUsername] = useState(profile.username ?? "");
   const [infoSaving, setInfoSaving] = useState(false);
-  const [infoMsg,    setInfoMsg]    = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [infoMsg, setInfoMsg] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   /* ── Password state ──────────────────────────────────────── */
-  const [currentPwd,  setCurrentPwd]  = useState("");
-  const [newPwd,      setNewPwd]      = useState("");
-  const [confirmPwd,  setConfirmPwd]  = useState("");
+  const [currentPwd, setCurrentPwd] = useState("");
+  const [newPwd, setNewPwd] = useState("");
+  const [confirmPwd, setConfirmPwd] = useState("");
   const [showCurrent, setShowCurrent] = useState(false);
-  const [showNew,     setShowNew]     = useState(false);
+  const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [pwdSaving,   setPwdSaving]   = useState(false);
-  const [pwdMsg,      setPwdMsg]      = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [pwdSaving, setPwdSaving] = useState(false);
+  const [pwdMsg, setPwdMsg] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   /* ── Sign out all state ──────────────────────────────────── */
   const [signingOutAll, setSigningOutAll] = useState(false);
-  const [showSignOutModal, setShowSignOutModal] = useState(false); 
+  const [showSignOutModal, setShowSignOutModal] = useState(false);
 
   /* ── Role Details ────────────────────────────────────────── */
   const roleName = profile.roles?.name ?? "user";
@@ -88,7 +94,7 @@ export default function ProfileClient({
       const { error } = await supabase
         .from("profiles")
         .update({
-          username:  username.trim(),
+          username: username.trim(),
         })
         .eq("id", profile.id);
 
@@ -111,7 +117,10 @@ export default function ProfileClient({
     setPwdMsg(null);
 
     if (newPwd.length < 6) {
-      setPwdMsg({ type: "error", text: "New password must be at least 6 characters." });
+      setPwdMsg({
+        type: "error",
+        text: "New password must be at least 6 characters.",
+      });
       return;
     }
     if (newPwd !== confirmPwd) {
@@ -119,7 +128,10 @@ export default function ProfileClient({
       return;
     }
     if (newPwd === currentPwd) {
-      setPwdMsg({ type: "error", text: "New password must differ from your current password." });
+      setPwdMsg({
+        type: "error",
+        text: "New password must differ from your current password.",
+      });
       return;
     }
 
@@ -161,22 +173,27 @@ export default function ProfileClient({
   /* ── Render ──────────────────────────────────────────────── */
   return (
     <div className="max-w-3xl space-y-4 sm:space-y-6 w-full">
-
       {/* ── Avatar / identity header ────────────────────────── */}
       <div className="card p-4 sm:p-6 flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-5 text-center sm:text-left w-full">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-xl font-bold text-white shrink-0 shadow-md overflow-hidden">
+        <div className="w-16 h-16 rounded-2xl bg-linear-to-br from-amber-400 to-amber-600 flex items-center justify-center text-xl font-bold text-white shrink-0 shadow-md overflow-hidden">
           {avatarUrl ? (
-            <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+            <img
+              src={avatarUrl}
+              alt="Avatar"
+              className="w-full h-full object-cover"
+            />
           ) : (
             contextInitials || "U"
           )}
         </div>
 
         <div className="flex-1 min-w-0 w-full">
-          <h2 className="text-xl font-display font-bold text-slate-900 break-words">
+          <h2 className="text-xl font-display font-bold text-slate-900 wrap-break-word">
             {profile.username ?? "—"}
           </h2>
-          <p className="text-sm text-slate-500 mt-0.5 break-words">{email}</p>
+          <p className="text-sm text-slate-500 mt-0.5 wrap-break-word">
+            {email}
+          </p>
           <div className="flex items-center justify-center sm:justify-start gap-2 mt-2 sm:mt-3 flex-wrap w-full">
             <span
               className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${roleStyle}`}
@@ -203,16 +220,31 @@ export default function ProfileClient({
         </h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 w-full">
           {[
-            { label: "Total submitted", value: stats.total,    color: "text-slate-900" },
-            { label: "Approved",        value: stats.approved, color: "text-emerald-600" },
-            { label: "Pending",         value: stats.pending,  color: "text-amber-600"  },
-            { label: "Rejected",        value: stats.rejected, color: "text-red-600"    },
+            {
+              label: "Total submitted",
+              value: stats.total,
+              color: "text-slate-900",
+            },
+            {
+              label: "Approved",
+              value: stats.approved,
+              color: "text-emerald-600",
+            },
+            { label: "Pending", value: stats.pending, color: "text-amber-600" },
+            { label: "Rejected", value: stats.rejected, color: "text-red-600" },
           ].map((s) => (
-            <div key={s.label} className="bg-slate-50 rounded-xl p-3 sm:p-4 border border-slate-100 w-full">
-              <div className={`text-2xl sm:text-3xl font-display font-bold ${s.color}`}>
+            <div
+              key={s.label}
+              className="bg-slate-50 rounded-xl p-3 sm:p-4 border border-slate-100 w-full"
+            >
+              <div
+                className={`text-2xl sm:text-3xl font-display font-bold ${s.color}`}
+              >
                 {s.value}
               </div>
-              <div className="text-xs text-slate-500 mt-1 break-words">{s.label}</div>
+              <div className="text-xs text-slate-500 mt-1 wrap-break-word">
+                {s.label}
+              </div>
             </div>
           ))}
         </div>
@@ -220,8 +252,9 @@ export default function ProfileClient({
         <p className="text-xs text-slate-400 mt-4 flex items-start gap-1.5 leading-relaxed">
           <Shield className="w-3.5 h-3.5 shrink-0 mt-0.5" />
           <span>
-            Your role is <strong className="text-slate-600">{roleLabel}</strong>.
-            Roles are assigned by a System Administrator and cannot be changed here.
+            Your role is <strong className="text-slate-600">{roleLabel}</strong>
+            . Roles are assigned by a System Administrator and cannot be changed
+            here.
           </span>
         </p>
       </div>
@@ -230,18 +263,16 @@ export default function ProfileClient({
       <div className="card overflow-hidden w-full">
         <div className="px-4 sm:px-6 py-4 border-b border-slate-100 flex items-center gap-2">
           <User className="w-4 h-4 text-slate-400 shrink-0" />
-          <h3 className="text-sm font-semibold text-slate-900 break-words">
+          <h3 className="text-sm font-semibold text-slate-900 wrap-break-word">
             Personal information
           </h3>
         </div>
 
         <form onSubmit={saveInfo} className="p-4 sm:p-6 space-y-4 w-full">
-          {infoMsg && (
-            <Feedback type={infoMsg.type} text={infoMsg.text} />
-          )}
+          {infoMsg && <Feedback type={infoMsg.type} text={infoMsg.text} />}
 
           <div className="w-full">
-            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5 break-words">
+            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5 wrap-break-word">
               Email address
             </label>
             <div className="relative w-full">
@@ -249,16 +280,17 @@ export default function ProfileClient({
               <input
                 disabled
                 value={email}
-                className="field-input !pl-9 bg-slate-50 text-slate-400 cursor-not-allowed w-full text-sm sm:text-base py-2.5 sm:py-2"
+                className="field-input pl-9! bg-slate-50 text-slate-400 cursor-not-allowed w-full text-sm sm:text-base py-2.5 sm:py-2"
               />
             </div>
-            <p className="text-xs text-slate-400 mt-1.5 break-words">
-              Email address cannot be changed. Contact your administrator if needed.
+            <p className="text-xs text-slate-400 mt-1.5 wrap-break-word">
+              Email address cannot be changed. Contact your administrator if
+              needed.
             </p>
           </div>
 
           <div className="w-full">
-            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5 break-words">
+            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5 wrap-break-word">
               Username *
             </label>
             <div className="relative w-full">
@@ -268,7 +300,7 @@ export default function ProfileClient({
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Dr. Jane Smith"
-                className="field-input !pl-9 w-full text-sm sm:text-base py-2.5 sm:py-2"
+                className="field-input pl-9! w-full text-sm sm:text-base py-2.5 sm:py-2"
               />
             </div>
           </div>
@@ -295,18 +327,16 @@ export default function ProfileClient({
       <div className="card overflow-hidden w-full">
         <div className="px-4 sm:px-6 py-4 border-b border-slate-100 flex items-center gap-2">
           <Lock className="w-4 h-4 text-slate-400 shrink-0" />
-          <h3 className="text-sm font-semibold text-slate-900 break-words">
+          <h3 className="text-sm font-semibold text-slate-900 wrap-break-word">
             Change password
           </h3>
         </div>
 
         <form onSubmit={changePassword} className="p-4 sm:p-6 space-y-4 w-full">
-          {pwdMsg && (
-            <Feedback type={pwdMsg.type} text={pwdMsg.text} />
-          )}
+          {pwdMsg && <Feedback type={pwdMsg.type} text={pwdMsg.text} />}
 
           <div className="w-full">
-            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5 break-words">
+            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5 wrap-break-word">
               Current password *
             </label>
             <PasswordField
@@ -319,7 +349,7 @@ export default function ProfileClient({
           </div>
 
           <div className="w-full">
-            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5 break-words">
+            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5 wrap-break-word">
               New password *
             </label>
             <PasswordField
@@ -332,7 +362,7 @@ export default function ProfileClient({
           </div>
 
           <div className="w-full">
-            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5 break-words">
+            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5 wrap-break-word">
               Confirm new password *
             </label>
             <PasswordField
@@ -341,12 +371,10 @@ export default function ProfileClient({
               show={showConfirm}
               onToggle={() => setShowConfirm((p) => !p)}
               placeholder="Repeat your new password"
-              hasError={
-                confirmPwd.length > 0 && newPwd !== confirmPwd
-              }
+              hasError={confirmPwd.length > 0 && newPwd !== confirmPwd}
             />
             {confirmPwd.length > 0 && newPwd !== confirmPwd && (
-              <p className="text-xs text-red-500 mt-1.5 break-words">
+              <p className="text-xs text-red-500 mt-1.5 wrap-break-word">
                 Passwords do not match
               </p>
             )}
@@ -379,24 +407,26 @@ export default function ProfileClient({
       {/* ── Danger zone ──────────────────────────────────────── */}
       <div className="card overflow-hidden border-red-200 w-full">
         <div className="px-4 sm:px-6 py-4 border-b border-red-100 bg-red-50/50">
-          <h3 className="text-sm font-semibold text-red-800 break-words">Danger zone</h3>
-          <p className="text-xs text-red-500 mt-0.5 break-words">
+          <h3 className="text-sm font-semibold text-red-800 wrap-break-word">
+            Danger zone
+          </h3>
+          <p className="text-xs text-red-500 mt-0.5 wrap-break-word">
             These actions affect your account security
           </p>
         </div>
         <div className="p-4 sm:p-6 w-full">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 w-full">
             <div className="w-full sm:flex-1">
-              <p className="text-sm font-semibold text-slate-900 break-words">
+              <p className="text-sm font-semibold text-slate-900 wrap-break-word">
                 Sign out of all devices
               </p>
-              <p className="text-xs text-slate-500 mt-1 leading-relaxed break-words">
-                Immediately invalidates every active session across all
-                browsers and devices. You will need to sign in again on
-                this device after.
+              <p className="text-xs text-slate-500 mt-1 leading-relaxed wrap-break-word">
+                Immediately invalidates every active session across all browsers
+                and devices. You will need to sign in again on this device
+                after.
               </p>
             </div>
-            
+
             <button
               onClick={() => setShowSignOutModal(true)}
               disabled={signingOutAll}
@@ -413,7 +443,6 @@ export default function ProfileClient({
         </div>
       </div>
 
-      
       <ConfirmModal
         isOpen={showSignOutModal}
         onClose={() => setShowSignOutModal(false)}
@@ -430,13 +459,7 @@ export default function ProfileClient({
 }
 
 /* ── Shared sub-components ───────────────────────────────── */
-function Feedback({
-  type,
-  text,
-}: {
-  type: "success" | "error";
-  text: string;
-}) {
+function Feedback({ type, text }: { type: "success" | "error"; text: string }) {
   const isSuccess = type === "success";
   return (
     <div
@@ -451,7 +474,7 @@ function Feedback({
       ) : (
         <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
       )}
-      <span className="break-words w-full">{text}</span>
+      <span className="wrap-break-word w-full">{text}</span>
     </div>
   );
 }
@@ -480,8 +503,10 @@ function PasswordField({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className={`field-input !pl-9 pr-12 w-full text-sm sm:text-base py-2.5 sm:py-2 ${
-          hasError ? "border-red-400 focus:border-red-400 focus:ring-red-100" : ""
+        className={`field-input pl-9! pr-12 w-full text-sm sm:text-base py-2.5 sm:py-2 ${
+          hasError
+            ? "border-red-400 focus:border-red-400 focus:ring-red-100"
+            : ""
         }`}
       />
       <button
@@ -489,11 +514,7 @@ function PasswordField({
         onClick={onToggle}
         className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors flex items-center justify-center p-1"
       >
-        {show ? (
-          <EyeOff className="w-4 h-4" />
-        ) : (
-          <Eye className="w-4 h-4" />
-        )}
+        {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
       </button>
     </div>
   );
