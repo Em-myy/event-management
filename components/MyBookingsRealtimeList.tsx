@@ -15,7 +15,10 @@ interface Props {
   initialBookings: MyBooking[];
 }
 
-export default function MyBookingsRealtimeList({ userId, initialBookings }: Props) {
+export default function MyBookingsRealtimeList({
+  userId,
+  initialBookings,
+}: Props) {
   const { pinged } = useTableChangeRefresh({
     table: "events",
     channelName: `my-bookings-${userId}`,
@@ -31,7 +34,9 @@ export default function MyBookingsRealtimeList({ userId, initialBookings }: Prop
       {items.length === 0 ? (
         <div className="card px-4 sm:px-6 py-12 sm:py-20 text-center animate-slide-up w-full">
           <CalendarDays className="w-10 sm:w-12 h-10 sm:h-12 text-slate-300 mx-auto mb-3 sm:mb-4" />
-          <p className="font-semibold text-slate-700 text-sm sm:text-base">No bookings found</p>
+          <p className="font-semibold text-slate-700 text-sm sm:text-base">
+            No bookings found
+          </p>
           <p className="text-xs sm:text-sm text-slate-400 mt-1 mb-6">
             You haven&apos;t made any booking requests yet.
           </p>
@@ -63,51 +68,56 @@ function BookingCard({ booking: bk }: { booking: MyBooking }) {
       <div className="flex flex-col sm:flex-row items-start justify-between gap-4 w-full">
         <div className="flex-1 min-w-0 w-full">
           <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-1 sm:mb-2 w-full">
-            <h3 className="font-display font-semibold text-slate-900 text-base break-words min-w-0">
+            <h3 className="font-display font-semibold text-slate-900 text-base wrap-break-word min-w-0">
               {bk.title}
             </h3>
             <StatusBadge status={bk.status} />
           </div>
           {bk.description && (
-            <p className="text-sm text-slate-500 mb-3 break-words w-full">{bk.description}</p>
+            <p className="text-sm text-slate-500 mb-3 wrap-break-word w-full">
+              {bk.description}
+            </p>
           )}
           <div className="flex flex-wrap gap-x-4 sm:gap-x-5 gap-y-2 text-xs text-slate-500">
-            <span className="flex items-center gap-1 break-words">
+            <span className="flex items-center gap-1 wrap-break-word">
               <span className="font-semibold text-slate-700">Venue:</span>
               {venue.name ?? "Not specified"}
               {venue.location && ` · ${venue.location}`}
             </span>
-            <span className="flex items-center gap-1 break-words">
+            <span className="flex items-center gap-1 wrap-break-word">
               <span className="font-semibold text-slate-700">From:</span>
               {formatDateTime(bk.start_time)}
             </span>
-            <span className="flex items-center gap-1 break-words">
+            <span className="flex items-center gap-1 wrap-break-word">
               <span className="font-semibold text-slate-700">To:</span>
               {formatDateTime(bk.end_time)}
             </span>
           </div>
 
-        {resources.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            {resources.map((r, idx) => {
-              // Normalize the nested resource object
-              const resObj = Array.isArray(r.resources) ? r.resources[0] : r.resources;
+          {resources.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {resources.map((r, idx) => {
+                // Normalize the nested resource object
+                const resObj = Array.isArray(r.resources)
+                  ? r.resources[0]
+                  : r.resources;
 
-              return (
-                <span
-                  key={`${resObj?.name}-${idx}`}
-                  className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 text-xs text-slate-600 font-medium"
-                >
-                  {resObj?.name} × {r.quantity_requested}
-                </span>
-              );
-            })}
-          </div>
-        )}
+                return (
+                  <span
+                    key={`${resObj?.name}-${idx}`}
+                    className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 text-xs text-slate-600 font-medium"
+                  >
+                    {resObj?.name} × {r.quantity_requested}
+                  </span>
+                );
+              })}
+            </div>
+          )}
 
           {bk.status === "rejected" && bk.rejection_reason && (
-            <p className="mt-3 text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2 w-full break-words">
-              <span className="font-semibold">Rejection reason:</span> {bk.rejection_reason}
+            <p className="mt-3 text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2 w-full wrap-break-word">
+              <span className="font-semibold">Rejection reason:</span>{" "}
+              {bk.rejection_reason}
             </p>
           )}
         </div>
@@ -119,7 +129,7 @@ function BookingCard({ booking: bk }: { booking: MyBooking }) {
         )}
       </div>
 
-      <div className="mt-3 pt-3 border-t border-slate-100 text-xs text-slate-400 break-words">
+      <div className="mt-3 pt-3 border-t border-slate-100 text-xs text-slate-400 wrap-break-word">
         Submitted {formatDateTime(bk.created_at)}
       </div>
     </div>
