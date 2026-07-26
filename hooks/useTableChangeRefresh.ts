@@ -67,8 +67,11 @@ export function useTableChangeRefresh({
 
           setPinged(true);
           if (pingTimeout.current) clearTimeout(pingTimeout.current);
-          pingTimeout.current = setTimeout(() => setPinged(false), pingDuration);
-        }
+          pingTimeout.current = setTimeout(
+            () => setPinged(false),
+            pingDuration,
+          );
+        },
       )
       .subscribe();
 
@@ -76,7 +79,6 @@ export function useTableChangeRefresh({
       supabase.removeChannel(channel);
       if (pingTimeout.current) clearTimeout(pingTimeout.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [channelName, table, schema, event, filter]);
 
   return { pinged };
