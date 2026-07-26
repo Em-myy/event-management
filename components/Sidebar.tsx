@@ -27,7 +27,7 @@ type Profile = Tables<"profiles"> & {
 
 interface SidebarProps {
   profile: Profile | null;
-  initialPendingCount?: number; 
+  initialPendingCount?: number;
 }
 
 interface NavItem {
@@ -40,12 +40,23 @@ interface NavItem {
 
 /* ── Constants ────────────────────────────────────────────── */
 const NAV: NavItem[] = [
-  { href: "/dashboard",  label: "Dashboard",   icon: LayoutDashboard, minRole: 1 },
-  { href: "/bookings",   label: "My Bookings", icon: CalendarDays,    minRole: 1 },
-  { href: "/bookings/new", label: "New Booking", icon: CalendarPlus,    minRole: 1 },
-  { href: "/approvals",  label: "Approvals",   icon: CheckSquare,     minRole: 2, showBadge: true },
-  { href: "/admin",      label: "Admin Panel", icon: Settings,        minRole: 3 },
-  { href: "/profile",    label: "My Profile",  icon: UserCircle,      minRole: 1 },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, minRole: 1 },
+  { href: "/bookings", label: "My Bookings", icon: CalendarDays, minRole: 1 },
+  {
+    href: "/bookings/new",
+    label: "New Booking",
+    icon: CalendarPlus,
+    minRole: 1,
+  },
+  {
+    href: "/approvals",
+    label: "Approvals",
+    icon: CheckSquare,
+    minRole: 2,
+    showBadge: true,
+  },
+  { href: "/admin", label: "Admin Panel", icon: Settings, minRole: 3 },
+  { href: "/profile", label: "My Profile", icon: UserCircle, minRole: 1 },
 ];
 
 const ROLE_LABELS: Record<number, string> = {
@@ -54,7 +65,10 @@ const ROLE_LABELS: Record<number, string> = {
   3: "Administrator",
 };
 
-export default function Sidebar({ profile, initialPendingCount = 0 }: SidebarProps) {
+export default function Sidebar({
+  profile,
+  initialPendingCount = 0,
+}: SidebarProps) {
   const pathname = usePathname();
   const roleId = profile?.role_id ?? 1;
 
@@ -77,7 +91,7 @@ export default function Sidebar({ profile, initialPendingCount = 0 }: SidebarPro
         .from("events")
         .select("id", { count: "exact", head: true })
         .eq("status", "pending");
-      
+
       setPendingCount(count ?? 0);
     }
 
@@ -88,7 +102,7 @@ export default function Sidebar({ profile, initialPendingCount = 0 }: SidebarPro
         { event: "*", schema: "public", table: "events" } as any, // eslint-disable-line @typescript-eslint/no-explicit-any
         () => {
           refreshCount();
-        }
+        },
       )
       .subscribe();
 
@@ -161,7 +175,7 @@ export default function Sidebar({ profile, initialPendingCount = 0 }: SidebarPro
           <div className="text-[10px] font-semibold text-slate-600 uppercase tracking-widest px-3 mb-3">
             Navigation
           </div>
-          
+
           {NAV.filter((n) => roleId >= n.minRole).map((item) => {
             // 1. Is it an exact match?
             const isExactMatch = pathname === item.href;
@@ -169,7 +183,9 @@ export default function Sidebar({ profile, initialPendingCount = 0 }: SidebarPro
             // 2. Is it a parent match?
             const isParentMatch =
               pathname.startsWith(item.href + "/") &&
-              !NAV.some((n) => n.href !== item.href && pathname.startsWith(n.href));
+              !NAV.some(
+                (n) => n.href !== item.href && pathname.startsWith(n.href),
+              );
 
             const active = isExactMatch || isParentMatch;
             const Icon = item.icon;
@@ -188,21 +204,25 @@ export default function Sidebar({ profile, initialPendingCount = 0 }: SidebarPro
               >
                 <Icon
                   className={`w-4 h-4 shrink-0 ${
-                    active ? "text-amber-400" : "text-slate-500 group-hover:text-slate-300"
+                    active
+                      ? "text-amber-400"
+                      : "text-slate-500 group-hover:text-slate-300"
                   }`}
                 />
-                
+
                 <span className="flex-1 truncate">{item.label}</span>
 
                 {/* Approvals Badge */}
                 {displayBadge && (
-                  <span className="bg-amber-500 text-slate-950 text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center shrink-0">
+                  <span className="bg-amber-500 text-slate-950 text-[10px] font-bold rounded-full min-w-4.5 h-4.5 px-1 flex items-center justify-center shrink-0">
                     {pendingCount > 99 ? "99+" : pendingCount}
                   </span>
                 )}
 
                 {/* Active Chevron (Hidden if Badge is showing to prevent crowding) */}
-                {active && !displayBadge && <ChevronRight className="w-3 h-3 text-amber-500 shrink-0" />}
+                {active && !displayBadge && (
+                  <ChevronRight className="w-3 h-3 text-amber-500 shrink-0" />
+                )}
               </Link>
             );
           })}
@@ -211,9 +231,13 @@ export default function Sidebar({ profile, initialPendingCount = 0 }: SidebarPro
         {/* User Profile Footer */}
         <div className="px-4 py-4 border-t border-white/5">
           <div className="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-white/5 transition-colors">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-xs font-bold text-white shrink-0 overflow-hidden shadow-sm">
+            <div className="w-8 h-8 rounded-lg bg-linear-to-br from-amber-400 to-amber-600 flex items-center justify-center text-xs font-bold text-white shrink-0 overflow-hidden shadow-sm">
               {avatarUrl ? (
-                <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                <img
+                  src={avatarUrl}
+                  alt="Avatar"
+                  className="w-full h-full object-cover"
+                />
               ) : (
                 initials || "U"
               )}
