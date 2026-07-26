@@ -15,19 +15,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       setUser(user);
       setLoading(false);
     };
 
     getUser();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setUser(session?.user ?? null);
-        setLoading(false);
-      }
-    );
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
 
     return () => {
       subscription.unsubscribe();
@@ -45,26 +47,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   // 💡 DERIVED STATE: Calculate these dynamically based on the current user.
   // If the user changes (e.g. they log in), these instantly update!
-  const avatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture || null;
-  
-  const displayName = 
-    user?.user_metadata?.display_name || 
-    user?.user_metadata?.full_name || 
-    user?.user_metadata?.username || 
-    user?.email || 
+  const avatarUrl =
+    user?.user_metadata?.avatar_url || user?.user_metadata?.picture || null;
+
+  const displayName =
+    user?.user_metadata?.display_name ||
+    user?.user_metadata?.full_name ||
+    user?.user_metadata?.username ||
+    user?.email ||
     "Unknown User";
 
-  const initials = displayName !== "Unknown User" ? displayName.charAt(0).toUpperCase() : "?";
+  const initials =
+    displayName !== "Unknown User" ? displayName.charAt(0).toUpperCase() : "?";
 
   return (
     <AuthContext.Provider
-      value={{ 
-        user, 
-        avatarUrl, 
-        initials, // Exported as plural 'initials' to match Sidebar
-        displayName, 
-        loading, 
-        handleSignout 
+      value={{
+        user,
+        avatarUrl,
+        initials,
+        displayName,
+        loading,
+        handleSignout,
       }}
     >
       {children}
