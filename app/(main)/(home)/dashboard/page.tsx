@@ -53,15 +53,17 @@ export default async function DashboardPage() {
     profile?.roles?.name === "admin"
       ? "System Administrator"
       : profile?.roles?.name === "hod"
-      ? "Event Coordinator / HOD"
-      : "General User";
+        ? "Event Coordinator / HOD"
+        : "General User";
 
   return (
     <div className="animate-fade-in w-full">
       <div className="page-header flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0 mb-6 sm:mb-8">
-        <div className="w-full sm:w-auto break-words">
+        <div className="w-full sm:w-auto wrap-break-word">
           <p className="text-slate-500 text-sm font-medium">{greeting},</p>
-          <h1 className="page-title text-2xl sm:text-3xl md:text-4xl">{profile?.username ?? user.email}</h1>
+          <h1 className="page-title text-2xl sm:text-3xl md:text-4xl">
+            {profile?.username ?? user.email}
+          </h1>
           <p className="page-subtitle text-sm sm:text-base">{roleName}</p>
         </div>
         <Link
