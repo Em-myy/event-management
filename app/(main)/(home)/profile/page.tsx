@@ -10,7 +10,7 @@ export default async function ProfilePage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  
+
   if (!user) redirect("/");
 
   // Use the imported builders
@@ -23,19 +23,19 @@ export default async function ProfilePage() {
 
   const events = statsRes.data ?? [];
   const stats = {
-    total:    events.length,
+    total: events.length,
     approved: events.filter((e) => e.status === "approved").length,
-    pending:  events.filter((e) => e.status === "pending").length,
+    pending: events.filter((e) => e.status === "pending").length,
     rejected: events.filter((e) => e.status === "rejected").length,
   };
 
   return (
     <div className="animate-fade-in w-full">
       <div className="page-header mb-6 sm:mb-8 flex flex-col gap-1 sm:gap-2">
-        <h1 className="page-title text-2xl sm:text-3xl md:text-4xl break-words">
+        <h1 className="page-title text-2xl sm:text-3xl md:text-4xl wrap-break-word">
           My Profile
         </h1>
-        <p className="page-subtitle text-sm sm:text-base break-words">
+        <p className="page-subtitle text-sm sm:text-base wrap-break-word">
           Manage your personal information and account settings
         </p>
       </div>
