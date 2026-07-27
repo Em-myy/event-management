@@ -19,9 +19,13 @@ export default async function BookingsPage() {
   return (
     <div className="animate-fade-in w-full">
       <div className="page-header flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0 mb-6 sm:mb-8">
-        <div className="w-full sm:w-auto break-words">
-          <h1 className="page-title text-2xl sm:text-3xl md:text-4xl">My Bookings</h1>
-          <p className="page-subtitle text-sm sm:text-base">Track and manage all your booking requests</p>
+        <div className="w-full sm:w-auto wrap-break-word">
+          <h1 className="page-title text-2xl sm:text-3xl md:text-4xl">
+            My Bookings
+          </h1>
+          <p className="page-subtitle text-sm sm:text-base">
+            Track and manage all your booking requests
+          </p>
         </div>
         <Link
           href="/bookings/new"
@@ -33,7 +37,10 @@ export default async function BookingsPage() {
         </Link>
       </div>
 
-      <MyBookingsRealtimeList userId={user.id} initialBookings={bookings ?? []} />
+      <MyBookingsRealtimeList
+        userId={user.id}
+        initialBookings={bookings ?? []}
+      />
     </div>
   );
 }
