@@ -16,15 +16,15 @@ export default async function EditBookingPage({
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  
+
   if (!user) redirect("/");
 
   const resolvedParams = await params;
 
   const { data: booking, error } = await buildEditQuery(
     supabase,
-    resolvedParams.id, 
-    user.id
+    resolvedParams.id,
+    user.id,
   );
 
   if (error) {
@@ -60,8 +60,10 @@ export default async function EditBookingPage({
             My Bookings
           </Link>
         </div>
-        <h1 className="page-title text-2xl sm:text-3xl md:text-4xl break-words">Edit Booking</h1>
-        <p className="page-subtitle text-sm sm:text-base break-words">
+        <h1 className="page-title text-2xl sm:text-3xl md:text-4xl wrap-break-word">
+          Edit Booking
+        </h1>
+        <p className="page-subtitle text-sm sm:text-base wrap-break-word">
           Update your pending request — changes reset its approval status
         </p>
       </div>
